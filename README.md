@@ -1,0 +1,12 @@
+index.html
+manifest.json
+sw.js
+LICENSE
+.gitignore
+.nojekyll
+icons/icon-192.png
+icons/icon-512.png
+icons/icon-1024.png
+icons/apple-touch-icon.png
+icons/favicon-32.png
+icons/favicon-16.png
