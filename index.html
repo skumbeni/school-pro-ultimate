@@ -1283,6 +1283,10 @@ function viewProfile(idx) {
   currentSection = 'profile';
   document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
   document.getElementById('sec-profile').classList.add('active');
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.querySelectorAll('.mob-nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('sidebar').classList.remove('open');
+  updateUndoRedoBar();
 }
 
 function exportFilteredData() {
@@ -1764,6 +1768,7 @@ function updateFinTotal(idx) {
   });
   s.finance.total = total;
   document.getElementById('finTotal').textContent = 'K' + total.toLocaleString();
+  saveStudents();
 }
 
 function recordPayment(idx) {
@@ -1934,7 +1939,7 @@ function renderAnalytics() {
     <div style="display:flex;align-items:center;gap:8px;margin:4px 0">
       <span style="width:60px">Owing</span>
       <div style="flex:1;background:var(--border);border-radius:4px;height:24px;overflow:hidden">
-        <div style="width:${100-paidPct}%;background:var(--accent);height:100%;border-radius:4px"></div>
+        <div style="width:${100-Number(paidPct)}%;background:var(--accent);height:100%;border-radius:4px"></div>
       </div>
       <span>K${(totalFee-totalPaid).toLocaleString()}</span>
     </div>`;
@@ -1979,11 +1984,13 @@ function saveAnnouncement() {
 }
 
 function deleteAnnouncement(idx) {
+  pushUndo();
   alerts.splice(idx, 1);
   if (alerts.length === 0) config.activeAnnouncement = '';
   else config.activeAnnouncement = alerts[alerts.length - 1].text;
   saveAlerts(); saveConfig();
   renderAnnouncements();
+  showToast('Announcement deleted');
 }
 
 // ==================== REPORTS ====================
@@ -2277,7 +2284,7 @@ function renderFeeStructure() {
       html += `<div style="display:flex;align-items:center;gap:8px;margin:2px 0">
         <span class="badge badge-wa">${escHtml(cls)}</span>
         <span>K${pcTotal.toLocaleString()}</span>
-        <button class="btn btn-danger btn-sm" onclick="removeClassFeeOverride('${esc(cls)}')" style="padding:2px 6px">✕</button>
+        <button class="btn btn-danger btn-sm" onclick="removeClassFeeOverrideByIndex(${overrideNames.indexOf(cls)})" style="padding:2px 6px">✕</button>
       </div>`;
     });
     html += '</div>';
@@ -2332,7 +2339,7 @@ function editClassFeeOverride() {
   });
   modalHtml += `<div class="modal-actions">
     <button class="btn btn-outline" onclick="document.getElementById('classFeeModal').remove()">Cancel</button>
-    <button class="btn btn-primary" onclick="saveClassFeeOverride('${esc(cls)}')">Save</button>
+    <button class="btn btn-primary" id="saveClassFeeBtn">Save</button>
   </div>`;
 
   const overlay = document.createElement('div');
@@ -2340,6 +2347,7 @@ function editClassFeeOverride() {
   overlay.id = 'classFeeModal';
   overlay.innerHTML = `<div class="modal">${modalHtml}</div>`;
   document.body.appendChild(overlay);
+  document.getElementById('saveClassFeeBtn').addEventListener('click', () => saveClassFeeOverride(cls));
 }
 
 function saveClassFeeOverride(cls) {
@@ -2360,6 +2368,15 @@ function removeClassFeeOverride(cls) {
   delete config.feeStructure.perClass[cls];
   saveConfig();
   renderFeeStructure();
+}
+
+function removeClassFeeOverrideByIndex(idx) {
+  const keys = Object.keys(config.feeStructure.perClass || {});
+  if (idx >= 0 && idx < keys.length) {
+    delete config.feeStructure.perClass[keys[idx]];
+    saveConfig();
+    renderFeeStructure();
+  }
 }
 
 // ==================== TEACHERS ====================
@@ -2474,7 +2491,6 @@ function clearAllData() {
     config = getDefaultConfig();
     saveConfig(); saveStudents(); saveAlerts(); saveUndoData();
     showToast('All data cleared');
-    showLockScreen();
     document.getElementById('appContainer').style.display = 'none';
     showSetupWizard();
   });
@@ -2482,7 +2498,7 @@ function clearAllData() {
 
 // ==================== ESCAPING ====================
 function esc(str) { return String(str||'').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/'/g,'&#39;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
-function escHtml(str) { return String(str||'').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/'/g,'&#39;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function escHtml(str) { return esc(str); }
 
 // ==================== KEYBOARD SHORTCUTS ====================
 document.addEventListener('keydown', function(e) {
