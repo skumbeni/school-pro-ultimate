@@ -1,0 +1,2512 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EduGenius Pro Ultimate</title>
+<style>
+:root {
+  --primary: #6C3483; --primary-light: #A569BD; --primary-dark: #4A235A;
+  --accent: #E74C3C; --accent-light: #F1948A;
+  --success: #27AE60; --success-light: #82E0AA;
+  --warning: #F39C12; --warning-light: #F9E79F;
+  --info: #2E86C1; --info-light: #AED6F1;
+  --bg: #F8F9FA; --bg-card: #FFFFFF; --bg-sidebar: #2C3E50;
+  --text: #2C3E50; --text-light: #7F8C8D; --text-sidebar: #ECF0F1;
+  --border: #D5D8DC; --shadow: rgba(0,0,0,0.1);
+  --radius: 10px; --transition: 0.3s ease;
+}
+[data-theme="dark"] {
+  --bg: #1A1A2E; --bg-card: #16213E; --bg-sidebar: #0F3460;
+  --text: #E0E0E0; --text-light: #A0A0A0; --text-sidebar: #E0E0E0;
+  --border: #2C3E50; --shadow: rgba(0,0,0,0.3);
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+body { font-family:'Segoe UI',system-ui,-apple-system,sans-serif; background:var(--bg); color:var(--text); min-height:100vh; transition:background var(--transition),color var(--transition); }
+button { cursor:pointer; font-family:inherit; border:none; outline:none; }
+input,select,textarea { font-family:inherit; outline:none; border:1px solid var(--border); border-radius:6px; padding:8px 12px; background:var(--bg-card); color:var(--text); transition:border var(--transition); }
+input:focus,select:focus,textarea:focus { border-color:var(--primary); }
+.btn { display:inline-flex; align-items:center; gap:6px; padding:8px 16px; border-radius:6px; font-size:14px; font-weight:500; transition:all var(--transition); }
+.btn-primary { background:var(--primary); color:#fff; }
+.btn-primary:hover { background:var(--primary-dark); }
+.btn-success { background:var(--success); color:#fff; }
+.btn-success:hover { opacity:0.9; }
+.btn-danger { background:var(--accent); color:#fff; }
+.btn-danger:hover { opacity:0.9; }
+.btn-warning { background:var(--warning); color:#fff; }
+.btn-warning:hover { opacity:0.9; }
+.btn-info { background:var(--info); color:#fff; }
+.btn-info:hover { opacity:0.9; }
+.btn-outline { background:transparent; border:1px solid var(--primary); color:var(--primary); }
+.btn-outline:hover { background:var(--primary); color:#fff; }
+.btn-sm { padding:4px 10px; font-size:12px; }
+.btn-icon { width:36px; height:36px; padding:0; display:inline-flex; align-items:center; justify-content:center; border-radius:50%; }
+
+/* PIN Lock Screen */
+#lockScreen { position:fixed; inset:0; background:linear-gradient(135deg,var(--primary-dark),var(--primary)); display:flex; align-items:center; justify-content:center; z-index:10000; }
+.lock-box { background:var(--bg-card); border-radius:20px; padding:40px; text-align:center; max-width:400px; width:90%; box-shadow:0 20px 60px rgba(0,0,0,0.3); }
+.lock-box h1 { color:var(--primary); font-size:28px; margin-bottom:8px; }
+.lock-box p { color:var(--text-light); margin-bottom:24px; }
+.pin-input { font-size:24px; text-align:center; letter-spacing:8px; width:200px; margin:0 auto 16px; }
+.lock-error { color:var(--accent); font-size:13px; min-height:20px; }
+
+/* Setup Wizard */
+#setupWizard { position:fixed; inset:0; background:var(--bg); display:flex; align-items:center; justify-content:center; z-index:9999; }
+.wizard-box { background:var(--bg-card); border-radius:20px; padding:40px; max-width:550px; width:90%; box-shadow:0 10px 40px var(--shadow); }
+.wizard-box h2 { color:var(--primary); margin-bottom:20px; }
+.wizard-box label { display:block; font-weight:600; margin:12px 0 4px; }
+.wizard-box input,.wizard-box select { width:100%; margin-bottom:8px; }
+
+/* App Layout */
+#appContainer { display:none; }
+.app-layout { display:flex; min-height:100vh; }
+.sidebar { width:250px; background:var(--bg-sidebar); color:var(--text-sidebar); padding:16px 0; position:fixed; top:0; left:0; height:100vh; overflow-y:auto; z-index:100; transition:transform var(--transition); }
+.sidebar-logo { padding:16px 20px; font-size:20px; font-weight:700; border-bottom:1px solid rgba(255,255,255,0.1); margin-bottom:8px; }
+.sidebar-logo span { color:var(--primary-light); }
+.nav-item { display:flex; align-items:center; gap:10px; padding:10px 20px; cursor:pointer; transition:all var(--transition); font-size:14px; border-left:3px solid transparent; }
+.nav-item:hover { background:rgba(255,255,255,0.08); }
+.nav-item.active { background:rgba(255,255,255,0.12); border-left-color:var(--primary-light); font-weight:600; }
+.nav-item .icon { font-size:18px; width:24px; text-align:center; }
+.main-content { margin-left:250px; flex:1; padding:20px; min-height:100vh; }
+.section { display:none; animation:fadeIn 0.3s ease; }
+.section.active { display:block; }
+@keyframes fadeIn { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
+
+/* Cards */
+.card { background:var(--bg-card); border-radius:var(--radius); padding:20px; box-shadow:0 2px 10px var(--shadow); margin-bottom:16px; transition:box-shadow var(--transition); }
+.card:hover { box-shadow:0 4px 20px var(--shadow); }
+.card-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:16px; }
+.card-title { font-size:18px; font-weight:700; color:var(--primary); }
+
+/* Stats */
+.stats-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:16px; margin-bottom:20px; }
+.stat-card { background:var(--bg-card); border-radius:var(--radius); padding:20px; box-shadow:0 2px 10px var(--shadow); border-left:4px solid var(--primary); }
+.stat-card .stat-value { font-size:28px; font-weight:700; color:var(--primary); }
+.stat-card .stat-label { font-size:13px; color:var(--text-light); margin-top:4px; }
+
+/* Tables */
+.table-wrap { overflow-x:auto; }
+table { width:100%; border-collapse:collapse; }
+th { background:var(--primary); color:#fff; padding:10px 12px; text-align:left; font-size:13px; white-space:nowrap; }
+td { padding:8px 12px; border-bottom:1px solid var(--border); font-size:13px; }
+tr:hover td { background:rgba(108,52,131,0.04); }
+.badge { display:inline-block; padding:2px 8px; border-radius:12px; font-size:11px; font-weight:600; }
+.badge-m { background:#D6EAF8; color:#2E86C1; }
+.badge-f { background:#FADBD8; color:#E74C3C; }
+.badge-wa { background:#D5F5E3; color:#27AE60; }
+.badge-pass { background:#D5F5E3; color:#27AE60; }
+.badge-fail { background:#FADBD8; color:#E74C3C; }
+.badge-paid { background:#D5F5E3; color:#27AE60; }
+.badge-partial { background:#FEF9E7; color:#F39C12; }
+.badge-unpaid { background:#FADBD8; color:#E74C3C; }
+
+/* Forms */
+.form-group { margin-bottom:14px; }
+.form-group label { display:block; font-weight:600; margin-bottom:4px; font-size:13px; }
+.form-group input,.form-group select,.form-group textarea { width:100%; }
+.form-row { display:flex; gap:12px; flex-wrap:wrap; }
+.form-row > * { flex:1; min-width:150px; }
+
+/* Modal */
+.modal-overlay { position:fixed; inset:0; background:rgba(0,0,0,0.5); display:flex; align-items:center; justify-content:center; z-index:5000; animation:fadeIn 0.2s; }
+.modal { background:var(--bg-card); border-radius:var(--radius); padding:24px; max-width:600px; width:90%; max-height:85vh; overflow-y:auto; box-shadow:0 20px 60px rgba(0,0,0,0.3); }
+.modal h3 { color:var(--primary); margin-bottom:16px; }
+.modal-actions { display:flex; gap:8px; justify-content:flex-end; margin-top:16px; }
+
+/* Approval Dialog */
+#approvalDialog .modal { max-width:420px; border-top:4px solid var(--primary); }
+#approvalDialog .pin-field { font-size:20px; text-align:center; letter-spacing:6px; width:100%; margin:12px 0; }
+
+/* Floating Undo/Redo Bar */
+#undoRedoBar { position:fixed; bottom:20px; left:20px; z-index:4000; display:flex; gap:4px; background:rgba(44,62,80,0.9); backdrop-filter:blur(10px); border-radius:30px; padding:4px; box-shadow:0 4px 15px rgba(0,0,0,0.2); transition:opacity var(--transition); }
+#undoRedoBar.deactivated { opacity:0.4; pointer-events:none; }
+.ur-btn { display:flex; align-items:center; gap:4px; padding:8px 14px; border-radius:26px; font-size:12px; font-weight:600; color:#fff; transition:all var(--transition); background:transparent; }
+.ur-btn:hover:not(:disabled) { background:rgba(255,255,255,0.15); }
+.ur-btn:disabled { opacity:0.3; cursor:default; }
+.ur-btn .count { background:rgba(255,255,255,0.2); padding:1px 6px; border-radius:10px; font-size:10px; }
+
+/* Mobile Nav */
+.mobile-nav { display:none; position:fixed; bottom:0; left:0; right:0; background:var(--bg-sidebar); color:var(--text-sidebar); z-index:100; box-shadow:0 -2px 10px rgba(0,0,0,0.2); padding:4px 0; }
+.mobile-nav-inner { display:flex; justify-content:space-around; }
+.mob-nav-item { display:flex; flex-direction:column; align-items:center; padding:6px 4px; font-size:10px; cursor:pointer; opacity:0.7; transition:all var(--transition); min-width:0; flex:1; }
+.mob-nav-item.active { opacity:1; color:var(--primary-light); }
+.mob-nav-item .icon { font-size:18px; margin-bottom:2px; }
+
+/* Phone fields */
+.phone-entry { display:flex; gap:6px; align-items:center; margin-bottom:6px; flex-wrap:wrap; }
+.phone-entry input { flex:1; min-width:100px; }
+.phone-entry select { width:100px; }
+.phone-entry .wa-check { display:flex; align-items:center; gap:3px; font-size:11px; white-space:nowrap; }
+
+/* Grade Group in Database */
+.grade-group { margin-bottom:16px; }
+.grade-group-header { background:var(--primary); color:#fff; padding:10px 16px; border-radius:8px 8px 0 0; cursor:pointer; display:flex; align-items:center; justify-content:space-between; font-weight:600; }
+.grade-group-header .count { background:rgba(255,255,255,0.2); padding:2px 10px; border-radius:12px; font-size:12px; }
+.grade-group-body { border:1px solid var(--border); border-top:none; border-radius:0 0 8px 8px; overflow:hidden; }
+.grade-group-body.collapsed { display:none; }
+
+/* Fee structure table */
+.fee-table { width:100%; }
+.fee-table th { font-size:12px; padding:8px; }
+.fee-table td { padding:6px 8px; }
+.fee-table input { width:100%; padding:4px 8px; }
+.fee-total { font-weight:700; color:var(--primary); font-size:16px; }
+
+/* Inline edit */
+.inline-edit input,.inline-edit select { padding:4px 8px; font-size:13px; width:100%; }
+
+/* Responsive */
+@media(max-width:768px) {
+  .sidebar { transform:translateX(-100%); }
+  .sidebar.open { transform:translateX(0); }
+  .main-content { margin-left:0; padding:12px; padding-bottom:80px; }
+  .mobile-nav { display:block; }
+  #undoRedoBar { bottom:75px; left:10px; }
+  .stats-grid { grid-template-columns:repeat(2,1fr); }
+  .form-row { flex-direction:column; }
+}
+
+/* Scrollbar */
+::-webkit-scrollbar { width:6px; }
+::-webkit-scrollbar-track { background:transparent; }
+::-webkit-scrollbar-thumb { background:var(--border); border-radius:3px; }
+::-webkit-scrollbar-thumb:hover { background:var(--text-light); }
+
+/* Toast */
+.toast { position:fixed; top:20px; right:20px; z-index:9999; padding:12px 20px; border-radius:8px; color:#fff; font-size:14px; font-weight:500; animation:slideIn 0.3s ease; box-shadow:0 4px 15px rgba(0,0,0,0.2); }
+.toast-success { background:var(--success); }
+.toast-error { background:var(--accent); }
+.toast-info { background:var(--info); }
+@keyframes slideIn { from{transform:translateX(100%);opacity:0} to{transform:translateX(0);opacity:1} }
+
+.photo-avatar { width:36px; height:36px; border-radius:50%; object-fit:cover; border:2px solid var(--border); }
+.photo-placeholder { width:36px; height:36px; border-radius:50%; background:var(--primary-light); color:#fff; display:flex; align-items:center; justify-content:center; font-size:14px; font-weight:700; }
+.section-title { font-size:22px; font-weight:700; color:var(--primary); margin-bottom:16px; display:flex; align-items:center; gap:8px; }
+.filter-bar { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:16px; align-items:center; }
+.filter-bar input,.filter-bar select { padding:6px 12px; font-size:13px; }
+.expand-icon { transition:transform var(--transition); display:inline-block; }
+.expand-icon.rotated { transform:rotate(90deg); }
+.sub-grade-badge { background:rgba(255,255,255,0.15); padding:1px 6px; border-radius:8px; font-size:11px; margin-left:4px; }
+</style>
+</head>
+<body>
+
+<!-- Lock Screen -->
+<div id="lockScreen" style="display:none">
+  <div class="lock-box">
+    <div style="font-size:48px;margin-bottom:12px">🎓</div>
+    <h1>EduGenius Pro</h1>
+    <p>Enter your PIN to continue</p>
+    <input type="password" class="pin-input" id="lockPinInput" maxlength="6" placeholder="••••" autocomplete="off">
+    <br>
+    <button class="btn btn-primary" onclick="attemptUnlock()" style="margin-top:8px">Unlock</button>
+    <div class="lock-error" id="lockError"></div>
+  </div>
+</div>
+
+<!-- Setup Wizard -->
+<div id="setupWizard" style="display:none">
+  <div class="wizard-box">
+    <div style="font-size:48px;margin-bottom:8px">🎓</div>
+    <h2>Welcome to EduGenius Pro</h2>
+    <p style="color:var(--text-light);margin-bottom:20px">Let's set up your school. Fill in the details below.</p>
+    <label>School Name</label>
+    <input type="text" id="wizSchoolName" placeholder="e.g. Lusaka Academy">
+    <label>Application PIN (4-6 digits)</label>
+    <input type="password" id="wizAppPin" maxlength="6" placeholder="User PIN">
+    <label>Head Teacher PIN</label>
+    <input type="password" id="wizHeadPin" maxlength="6" placeholder="Head Teacher PIN">
+    <label>Master PIN</label>
+    <input type="password" id="wizMasterPin" maxlength="6" placeholder="Master PIN">
+    <div style="margin-top:20px">
+      <button class="btn btn-primary" onclick="completeSetup()" style="width:100%">Complete Setup</button>
+    </div>
+  </div>
+</div>
+
+<!-- Main App -->
+<div id="appContainer">
+  <div class="app-layout">
+    <!-- Sidebar -->
+    <nav class="sidebar" id="sidebar">
+      <div class="sidebar-logo">🎓 <span>EduGenius</span> Pro</div>
+      <div class="nav-item active" onclick="showSection('dashboard')" data-section="dashboard"><span class="icon">📊</span> Dashboard</div>
+      <div class="nav-item" onclick="showSection('database')" data-section="database"><span class="icon">🗃️</span> Database</div>
+      <div class="nav-item" onclick="showSection('register')" data-section="register"><span class="icon">➕</span> Register</div>
+      <div class="nav-item" onclick="showSection('assessments')" data-section="assessments"><span class="icon">📝</span> Assessments</div>
+      <div class="nav-item" onclick="showSection('classmarks')" data-section="classmarks"><span class="icon">📋</span> Class Marks</div>
+      <div class="nav-item" onclick="showSection('finance')" data-section="finance"><span class="icon">💰</span> Finance</div>
+      <div class="nav-item" onclick="showSection('attendance')" data-section="attendance"><span class="icon">📅</span> Attendance</div>
+      <div class="nav-item" onclick="showSection('conduct')" data-section="conduct"><span class="icon">⚖️</span> Conduct</div>
+      <div class="nav-item" onclick="showSection('analytics')" data-section="analytics"><span class="icon">📈</span> Analytics</div>
+      <div class="nav-item" onclick="showSection('announcements')" data-section="announcements"><span class="icon">📢</span> Announcements</div>
+      <div class="nav-item" onclick="showSection('reports')" data-section="reports"><span class="icon">📄</span> Reports</div>
+      <div class="nav-item" onclick="showSection('admin')" data-section="admin"><span class="icon">⚙️</span> Admin Settings</div>
+      <div style="margin-top:auto;padding:16px 20px;border-top:1px solid rgba(255,255,255,0.1)">
+        <div style="display:flex;align-items:center;gap:8px;cursor:pointer" onclick="toggleDarkMode()">
+          <span id="darkModeIcon">🌙</span> <span id="darkModeLabel">Dark Mode</span>
+        </div>
+        <div style="margin-top:8px;font-size:11px;opacity:0.6" id="sidebarSchoolName"></div>
+      </div>
+    </nav>
+
+    <!-- Main -->
+    <main class="main-content" id="mainContent">
+      <!-- Mobile header -->
+      <div style="display:none;margin-bottom:12px" id="mobileHeader">
+        <button class="btn btn-outline btn-sm" onclick="toggleSidebar()" style="margin-right:8px">☰</button>
+        <strong id="mobileSchoolName"></strong>
+      </div>
+
+      <!-- Dashboard Section -->
+      <div class="section active" id="sec-dashboard">
+        <div class="section-title">📊 Dashboard</div>
+        <div class="stats-grid" id="dashStats"></div>
+        <div class="card" style="cursor:pointer;text-align:center;padding:40px" onclick="showSection('database')">
+          <div style="font-size:48px;margin-bottom:8px">🗃️</div>
+          <div style="font-size:20px;font-weight:700;color:var(--primary)">Student Database</div>
+          <div style="color:var(--text-light);margin-top:4px">Click to view, search and manage all students</div>
+        </div>
+        <div class="stats-grid" id="dashQuickStats"></div>
+      </div>
+
+      <!-- Database Section -->
+      <div class="section" id="sec-database">
+        <div class="section-title">🗃️ Student Database</div>
+        <div class="filter-bar" id="dbFilterBar">
+          <select id="dbGradeFilter"><option value="">All Grades</option></select>
+          <select id="dbSubFilter"><option value="">All Sub-grades</option></select>
+          <input type="text" id="dbSearch" placeholder="Search name/ID..." oninput="renderDatabase()">
+          <button class="btn btn-info btn-sm" onclick="exportFilteredData()">📥 Export Filtered</button>
+        </div>
+        <div id="databaseContent"></div>
+      </div>
+
+      <!-- Register Section -->
+      <div class="section" id="sec-register">
+        <div class="section-title">➕ Student Registration</div>
+        <div class="card">
+          <div class="form-group">
+            <label>Student Name *</label>
+            <input type="text" id="regName" placeholder="Full name">
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>Sex *</label>
+              <select id="regSex"><option value="">Select</option><option value="Male">Male</option><option value="Female">Female</option></select>
+            </div>
+            <div class="form-group">
+              <label>Student ID *</label>
+              <input type="text" id="regId" placeholder="e.g. STU001">
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Class *</label>
+            <select id="regClass"></select>
+          </div>
+          <div class="form-group">
+            <label>Phone Numbers</label>
+            <div id="regPhones"></div>
+            <button class="btn btn-outline btn-sm" onclick="addRegPhone()" style="margin-top:4px">+ Add Phone</button>
+          </div>
+          <div class="form-group">
+            <label>Photo</label>
+            <input type="file" accept="image/*" id="regPhoto" onchange="handleRegPhoto(event)">
+            <div id="regPhotoPreview" style="margin-top:4px"></div>
+          </div>
+          <button class="btn btn-primary" onclick="registerStudent()">Register Student</button>
+        </div>
+      </div>
+
+      <!-- Assessments Section -->
+      <div class="section" id="sec-assessments">
+        <div class="section-title">📝 Assessments</div>
+        <div class="card">
+          <div class="form-row">
+            <div class="form-group"><label>Student</label><select id="assessStudent" onchange="loadAssessment()"></select></div>
+            <div class="form-group"><label>Term</label><select id="assessTerm"></select></div>
+          </div>
+          <div id="assessFields"></div>
+          <button class="btn btn-primary" onclick="saveAssessment()" style="margin-top:12px">Save Marks</button>
+        </div>
+      </div>
+
+      <!-- Class Marks Section -->
+      <div class="section" id="sec-classmarks">
+        <div class="section-title">📋 Class Marks Entry</div>
+        <div class="card">
+          <div class="form-row">
+            <div class="form-group"><label>Class</label><select id="cmClass"></select></div>
+            <div class="form-group"><label>Subject</label><select id="cmSubject" onchange="loadClassMarks()"></select></div>
+            <div class="form-group"><label>Assessment</label><select id="cmType"><option value="ca1">CA1</option><option value="ca2">CA2</option><option value="final">Final</option></select></div>
+          </div>
+          <div class="table-wrap" id="classMarksTable"></div>
+          <button class="btn btn-primary" onclick="saveClassMarks()" style="margin-top:12px">Save All Marks</button>
+        </div>
+      </div>
+
+      <!-- Finance Section -->
+      <div class="section" id="sec-finance">
+        <div class="section-title">💰 Finance</div>
+        <div class="card">
+          <div class="form-group"><label>Student</label><select id="finStudent" onchange="loadFinance()"></select></div>
+          <div id="financeContent"></div>
+        </div>
+        <div class="card" id="bulkFeeCard">
+          <div class="card-header"><span class="card-title">Bulk Fee Setting</span></div>
+          <div class="form-row">
+            <div class="form-group"><label>Class</label><select id="bulkFeeClass"></select></div>
+            <div class="form-group"><label>Total Fee Amount</label><input type="number" id="bulkFeeAmount" placeholder="e.g. 9000"></div>
+          </div>
+          <button class="btn btn-warning" onclick="applyBulkFee()">Apply to Class</button>
+        </div>
+      </div>
+
+      <!-- Attendance Section -->
+      <div class="section" id="sec-attendance">
+        <div class="section-title">📅 Attendance</div>
+        <div class="card">
+          <div class="form-row">
+            <div class="form-group"><label>Class</label><select id="attClass" onchange="loadAttendance()"></select></div>
+            <div class="form-group"><label>Date</label><input type="date" id="attDate" onchange="loadAttendance()"></div>
+          </div>
+          <div id="attendanceContent"></div>
+          <button class="btn btn-primary" onclick="saveAttendance()" style="margin-top:12px">Save Attendance</button>
+        </div>
+      </div>
+
+      <!-- Conduct Section -->
+      <div class="section" id="sec-conduct">
+        <div class="section-title">⚖️ Conduct & Discipline</div>
+        <div class="card">
+          <div class="form-group"><label>Student</label><select id="conductStudent" onchange="loadConduct()"></select></div>
+          <div id="conductList"></div>
+          <div class="form-row" style="margin-top:12px">
+            <div class="form-group"><label>Type</label><select id="conductType"><option value="Merits">Merits</option><option value="Demerits">Demerits</option><option value="Warning">Warning</option><option value="Suspension">Suspension</option></select></div>
+            <div class="form-group"><label>Date</label><input type="date" id="conductDate"></div>
+          </div>
+          <div class="form-group"><label>Description</label><textarea id="conductDesc" rows="2"></textarea></div>
+          <button class="btn btn-primary" onclick="saveConduct()">Log Conduct</button>
+        </div>
+      </div>
+
+      <!-- Analytics Section -->
+      <div class="section" id="sec-analytics">
+        <div class="section-title">📈 Analytics</div>
+        <div class="stats-grid" id="analyticsStats"></div>
+        <div class="card"><div class="card-header"><span class="card-title">Grade Distribution</span></div><div id="gradeDistChart"></div></div>
+        <div class="card"><div class="card-header"><span class="card-title">Fee Collection Overview</span></div><div id="feeChart"></div></div>
+        <div class="card"><div class="card-header"><span class="card-title">Attendance Overview</span></div><div id="attChart"></div></div>
+      </div>
+
+      <!-- Announcements Section -->
+      <div class="section" id="sec-announcements">
+        <div class="section-title">📢 Announcements</div>
+        <div class="card">
+          <div class="form-group"><label>Announcement Text</label><textarea id="annText" rows="3"></textarea></div>
+          <button class="btn btn-primary" onclick="saveAnnouncement()">Post Announcement</button>
+        </div>
+        <div id="announcementList"></div>
+      </div>
+
+      <!-- Reports Section -->
+      <div class="section" id="sec-reports">
+        <div class="section-title">📄 Reports</div>
+        <div class="card">
+          <div class="form-group"><label>Student</label><select id="reportStudent" onchange="loadReportPreview()"></select></div>
+          <div class="form-group"><label>Report Type</label>
+            <select id="reportType"><option value="academic">Academic Report</option><option value="finance">Financial Statement</option><option value="whatsapp">WhatsApp Summary</option></select>
+          </div>
+          <div id="reportPreview" style="margin-top:12px"></div>
+          <div class="form-group" style="margin-top:12px"><label>Authorization PIN</label><input type="password" id="reportPin" maxlength="6" placeholder="Enter PIN to generate"></div>
+          <button class="btn btn-primary" onclick="generateReport()">Generate Report</button>
+        </div>
+      </div>
+
+      <!-- Admin Section -->
+      <div class="section" id="sec-admin">
+        <div class="section-title">⚙️ Admin Settings</div>
+
+        <!-- PINs -->
+        <div class="card">
+          <div class="card-header"><span class="card-title">🔐 PIN Management</span></div>
+          <div class="form-row">
+            <div class="form-group"><label>App PIN</label><input type="password" id="adminAppPin" maxlength="6"></div>
+            <div class="form-group"><label>Head Teacher PIN</label><input type="password" id="adminHeadPin" maxlength="6"></div>
+            <div class="form-group"><label>Master PIN</label><input type="password" id="adminMasterPin" maxlength="6"></div>
+          </div>
+          <button class="btn btn-primary btn-sm" onclick="savePins()">Save PINs</button>
+        </div>
+
+        <!-- Approval Toggle -->
+        <div class="card">
+          <div class="card-header"><span class="card-title">✅ Save Approval</span></div>
+          <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
+            <input type="checkbox" id="adminRequireApproval" checked> Require PIN approval before saving
+          </label>
+        </div>
+
+        <!-- Grades & Subjects -->
+        <div class="card">
+          <div class="card-header"><span class="card-title">🏫 Grades & Subjects</span><button class="btn btn-primary btn-sm" onclick="addGrade()">+ Add Grade</button></div>
+          <div id="gradesManager"></div>
+        </div>
+
+        <!-- Fee Structure -->
+        <div class="card">
+          <div class="card-header"><span class="card-title">💰 Fee Structure</span></div>
+          <div id="feeStructureManager"></div>
+        </div>
+
+        <!-- Weighting -->
+        <div class="card">
+          <div class="card-header"><span class="card-title">⚖️ Assessment Weighting</span></div>
+          <div class="form-row">
+            <div class="form-group"><label>CA1 Weight (%)</label><input type="number" id="adminWCA1" min="0" max="100"></div>
+            <div class="form-group"><label>CA2 Weight (%)</label><input type="number" id="adminWCA2" min="0" max="100"></div>
+            <div class="form-group"><label>Final Weight (%)</label><input type="number" id="adminWFinal" min="0" max="100"></div>
+          </div>
+          <button class="btn btn-primary btn-sm" onclick="saveWeighting()">Save</button>
+        </div>
+
+        <!-- Grade Thresholds -->
+        <div class="card">
+          <div class="card-header"><span class="card-title">📊 Grade Thresholds</span></div>
+          <div class="form-row">
+            <div class="form-group"><label>A (min %)</label><input type="number" id="adminGradeA" min="0" max="100"></div>
+            <div class="form-group"><label>B (min %)</label><input type="number" id="adminGradeB" min="0" max="100"></div>
+            <div class="form-group"><label>C (min %)</label><input type="number" id="adminGradeC" min="0" max="100"></div>
+            <div class="form-group"><label>D (min %)</label><input type="number" id="adminGradeD" min="0" max="100"></div>
+            <div class="form-group"><label>Pass Mark (%)</label><input type="number" id="adminPassMark" min="0" max="100"></div>
+          </div>
+          <button class="btn btn-primary btn-sm" onclick="saveThresholds()">Save</button>
+        </div>
+
+        <!-- Term & Year -->
+        <div class="card">
+          <div class="card-header"><span class="card-title">📅 Term & Academic Year</span></div>
+          <div class="form-row">
+            <div class="form-group"><label>Current Term</label><input type="text" id="adminTerm" placeholder="e.g. Term 1"></div>
+            <div class="form-group"><label>Academic Year</label><input type="text" id="adminYear" placeholder="e.g. 2025"></div>
+          </div>
+          <button class="btn btn-primary btn-sm" onclick="saveTermYear()">Save</button>
+        </div>
+
+        <!-- Teachers -->
+        <div class="card">
+          <div class="card-header"><span class="card-title">👩‍🏫 Teacher Accounts</span><button class="btn btn-primary btn-sm" onclick="addTeacher()">+ Add Teacher</button></div>
+          <div id="teachersList"></div>
+        </div>
+
+        <!-- Data Management -->
+        <div class="card">
+          <div class="card-header"><span class="card-title">💾 Data Management</span></div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <button class="btn btn-info btn-sm" onclick="exportData()">📤 Export All Data</button>
+            <button class="btn btn-warning btn-sm" onclick="document.getElementById('importFile').click()">📥 Import Data</button>
+            <input type="file" id="importFile" accept=".json" style="display:none" onchange="importData(event)">
+            <button class="btn btn-danger btn-sm" onclick="clearAllData()">🗑️ Clear All Data</button>
+          </div>
+        </div>
+
+        <!-- Multi-School -->
+        <div class="card">
+          <div class="card-header"><span class="card-title">🏫 Multi-School</span><button class="btn btn-primary btn-sm" onclick="addSchool()">+ Add School</button></div>
+          <div id="schoolsList"></div>
+        </div>
+      </div>
+
+      <!-- Student Profile (hidden section) -->
+      <div class="section" id="sec-profile">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:16px">
+          <button class="btn btn-outline btn-sm" onclick="showSection('database')">← Back</button>
+          <span class="section-title" style="margin:0">👤 Student Profile</span>
+        </div>
+        <div id="profileContent"></div>
+      </div>
+    </main>
+  </div>
+
+  <!-- Mobile Nav -->
+  <div class="mobile-nav">
+    <div class="mobile-nav-inner" id="mobileNavInner">
+      <div class="mob-nav-item active" onclick="showSection('dashboard')" data-section="dashboard"><span class="icon">📊</span>Home</div>
+      <div class="mob-nav-item" onclick="showSection('database')" data-section="database"><span class="icon">🗃️</span>DB</div>
+      <div class="mob-nav-item" onclick="showSection('register')" data-section="register"><span class="icon">➕</span>Add</div>
+      <div class="mob-nav-item" onclick="showSection('finance')" data-section="finance"><span class="icon">💰</span>Finance</div>
+      <div class="mob-nav-item" onclick="showSection('admin')" data-section="admin"><span class="icon">⚙️</span>Admin</div>
+    </div>
+  </div>
+</div>
+
+<!-- Approval Dialog -->
+<div id="approvalDialog" style="display:none" class="modal-overlay">
+  <div class="modal">
+    <h3>🔒 Confirm Save</h3>
+    <p id="approvalDesc" style="color:var(--text-light);margin-bottom:12px"></p>
+    <label style="font-weight:600">Enter Master or Head Teacher PIN</label>
+    <input type="password" class="pin-field" id="approvalPin" maxlength="6" placeholder="••••••" autocomplete="off">
+    <div id="approvalError" style="color:var(--accent);font-size:13px;min-height:18px;margin-top:4px"></div>
+    <div class="modal-actions">
+      <button class="btn btn-outline" onclick="cancelApproval()">Cancel</button>
+      <button class="btn btn-primary" onclick="confirmApproval()">Approve & Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- Floating Undo/Redo Bar -->
+<div id="undoRedoBar" style="display:none">
+  <button class="ur-btn" id="undoBtn" onclick="undoLastAction()" disabled>↩️ Undo <span class="count" id="undoCount">0</span></button>
+  <button class="ur-btn" id="redoBtn" onclick="redoLastAction()" disabled>↪️ Redo <span class="count" id="redoCount">0</span></button>
+</div>
+
+<!-- Toast container -->
+<div id="toastContainer"></div>
+
+<script>
+/* ========================================================================
+   EduGenius Pro Ultimate - Complete School Management System
+   Version 21 - Enhanced with 7 new features
+   ======================================================================== */
+
+// ==================== CONSTANTS ====================
+const CONFIG_KEY = 'eduGenius_Config_v21';
+const DB_KEY = 'eduGenius_DB_v21';
+const UNDO_KEY = 'eduGenius_Undo_v21';
+const ALERTS_KEY = 'eduGenius_Alerts_v21';
+const OLD_CONFIG_KEY = 'eduGenius_Config_v20';
+const OLD_DB_KEY = 'eduGenius_DB_v20';
+const OLD_UNDO_KEY = 'eduGenius_Undo_v20';
+const OLD_ALERTS_KEY = 'eduGenius_Alerts_v20';
+const MAX_UNDO = 30;
+const UNDO_TIMEOUT = 60000; // 60 seconds
+
+// ==================== STATE ====================
+let config = {};
+let students = [];
+let undoStack = [];
+let redoStack = [];
+let alerts = [];
+let currentSection = 'dashboard';
+let editingStudentIdx = -1; // for inline edit in database
+let viewingProfileIdx = -1; // for student profile view
+let approvalCallback = null;
+let undoTimeout = null;
+let undoBarActive = false;
+let regPhotoData = null;
+
+// ==================== DEFAULT CONFIG ====================
+function getDefaultConfig() {
+  return {
+    isSetup: false,
+    schoolName: '',
+    activeAnnouncement: '',
+    weight_ca1: 20, weight_ca2: 20, weight_final: 60,
+    appPin: '', headTeacherPin: '', masterPin: '',
+    gradeA: 80, gradeB: 65, gradeC: 50, gradeD: 40, passMark: 50,
+    grades: [
+      { name: 'Grade 7', subGrades: ['7A','7B','7C'], subjects: ['Mathematics','English','Science','Social Studies','Creative Arts','ICT'] },
+      { name: 'Grade 8', subGrades: ['8A','8B','8C'], subjects: ['Mathematics','English','Science','Social Studies','Creative Arts','ICT'] },
+      { name: 'Grade 9', subGrades: ['9A','9B','9C'], subjects: ['Mathematics','English','Science','Social Studies','Creative Arts','ICT'] }
+    ],
+    feeStructure: {
+      categories: [
+        { name: 'School Fees', amount: 5000 },
+        { name: 'Food', amount: 1500 },
+        { name: 'Boarding', amount: 2000 },
+        { name: 'Exam Fees', amount: 500 }
+      ],
+      perClass: {}
+    },
+    requireApproval: true,
+    currentTerm: 'Term 1',
+    academicYear: '2025',
+    currentSchool: 'default',
+    schools: { default: 'My School' },
+    darkMode: false,
+    teachers: []
+  };
+}
+
+// ==================== DATA PERSISTENCE ====================
+function saveConfig() {
+  try { localStorage.setItem(CONFIG_KEY, JSON.stringify(config)); } catch(e) { showToast('Storage error','error'); }
+}
+function saveStudents() {
+  try { localStorage.setItem(DB_KEY, JSON.stringify(students)); } catch(e) { showToast('Storage error','error'); }
+}
+function saveUndoData() {
+  try { localStorage.setItem(UNDO_KEY, JSON.stringify({ undoStack, redoStack })); } catch(e) {}
+}
+function saveAlerts() {
+  try { localStorage.setItem(ALERTS_KEY, JSON.stringify(alerts)); } catch(e) {}
+}
+
+// ==================== MIGRATION from v20 ====================
+function migrateV20() {
+  // Migrate config
+  if (!localStorage.getItem(CONFIG_KEY) && localStorage.getItem(OLD_CONFIG_KEY)) {
+    try {
+      const old = JSON.parse(localStorage.getItem(OLD_CONFIG_KEY));
+      const newCfg = getDefaultConfig();
+      // Copy simple fields
+      newCfg.isSetup = old.isSetup || false;
+      newCfg.schoolName = old.schoolName || '';
+      newCfg.activeAnnouncement = old.activeAnnouncement || '';
+      newCfg.weight_ca1 = old.weight_ca1 ?? 20;
+      newCfg.weight_ca2 = old.weight_ca2 ?? 20;
+      newCfg.weight_final = old.weight_final ?? 60;
+      newCfg.appPin = old.appPin || '';
+      newCfg.headTeacherPin = old.headTeacherPin || '';
+      newCfg.masterPin = old.masterPin || '';
+      newCfg.gradeA = old.gradeA ?? 80;
+      newCfg.gradeB = old.gradeB ?? 65;
+      newCfg.gradeC = old.gradeC ?? 50;
+      newCfg.gradeD = old.gradeD ?? 40;
+      newCfg.passMark = old.passMark ?? 50;
+      newCfg.currentTerm = old.currentTerm || 'Term 1';
+      newCfg.academicYear = old.academicYear || '2025';
+      newCfg.currentSchool = old.currentSchool || 'default';
+      newCfg.schools = old.schools || { default: 'My School' };
+      newCfg.darkMode = old.darkMode || false;
+      newCfg.teachers = old.teachers || [];
+      newCfg.requireApproval = true;
+
+      // Migrate classes + subjectTemplates -> grades
+      if (old.classes && Array.isArray(old.classes)) {
+        newCfg.grades = old.classes.map(cls => {
+          const subjects = (old.subjectTemplates && old.subjectTemplates[cls]) || ['Mathematics','English','Science'];
+          // Try to guess sub-grades from class name like "Grade 7" -> ["7A","7B","7C"]
+          const numMatch = cls.match(/(\d+)/);
+          const subGrades = numMatch ? [numMatch[1]+'A', numMatch[1]+'B', numMatch[1]+'C'] : [];
+          return { name: cls, subGrades, subjects: [...subjects] };
+        });
+      }
+
+      // Build default fee structure
+      newCfg.feeStructure = { categories: [{name:'School Fees',amount:5000},{name:'Food',amount:1500},{name:'Boarding',amount:2000},{name:'Exam Fees',amount:500}], perClass:{} };
+
+      localStorage.setItem(CONFIG_KEY, JSON.stringify(newCfg));
+    } catch(e) { console.error('Config migration error', e); }
+  }
+
+  // Migrate students
+  if (!localStorage.getItem(DB_KEY) && localStorage.getItem(OLD_DB_KEY)) {
+    try {
+      const oldStudents = JSON.parse(localStorage.getItem(OLD_DB_KEY));
+      const migrated = oldStudents.map(s => migrateStudent(s));
+      localStorage.setItem(DB_KEY, JSON.stringify(migrated));
+    } catch(e) { console.error('Student migration error', e); }
+  }
+
+  // Migrate undo
+  if (!localStorage.getItem(UNDO_KEY) && localStorage.getItem(OLD_UNDO_KEY)) {
+    try {
+      const oldUndo = JSON.parse(localStorage.getItem(OLD_UNDO_KEY));
+      const newUndo = Array.isArray(oldUndo) ? oldUndo.map(s => migrateStudent(s)) : [];
+      localStorage.setItem(UNDO_KEY, JSON.stringify({ undoStack: newUndo, redoStack: [] }));
+    } catch(e) {}
+  }
+
+  // Migrate alerts
+  if (!localStorage.getItem(ALERTS_KEY) && localStorage.getItem(OLD_ALERTS_KEY)) {
+    try {
+      localStorage.setItem(ALERTS_KEY, localStorage.getItem(OLD_ALERTS_KEY));
+    } catch(e) {}
+  }
+}
+
+function migrateStudent(s) {
+  // Convert phone string to phones array
+  if (s.phone && (!s.phones || s.phones.length === 0)) {
+    s.phones = [{ number: s.phone, label: 'Primary', isWhatsApp: true }];
+    delete s.phone;
+  }
+  if (!s.phones || s.phones.length === 0) {
+    s.phones = [{ number: '', label: 'Primary', isWhatsApp: true }];
+  }
+  // Add sex field
+  if (!s.sex) s.sex = '';
+  // Add finance categories
+  if (!s.finance) s.finance = { total: 0, paid: 0 };
+  if (!s.finance.categories) s.finance.categories = [];
+  // Ensure other fields
+  if (!s.subjects) s.subjects = [];
+  if (!s.paymentHistory) s.paymentHistory = [];
+  if (!s.attendance) s.attendance = {};
+  if (!s.conduct) s.conduct = [];
+  if (!s.terms) s.terms = {};
+  return s;
+}
+
+// ==================== LOAD DATA ====================
+function loadData() {
+  migrateV20();
+  try {
+    const cfgRaw = localStorage.getItem(CONFIG_KEY);
+    config = cfgRaw ? JSON.parse(cfgRaw) : getDefaultConfig();
+    // Ensure all new fields exist
+    if (!config.grades) config.grades = getDefaultConfig().grades;
+    if (!config.feeStructure) config.feeStructure = getDefaultConfig().feeStructure;
+    if (config.requireApproval === undefined) config.requireApproval = true;
+    // Remove old fields if still present
+    if (config.classes) delete config.classes;
+    if (config.subjectTemplates) delete config.subjectTemplates;
+  } catch(e) { config = getDefaultConfig(); }
+
+  try {
+    const dbRaw = localStorage.getItem(DB_KEY);
+    students = dbRaw ? JSON.parse(dbRaw).map(s => migrateStudent(s)) : [];
+  } catch(e) { students = []; }
+
+  try {
+    const undoRaw = localStorage.getItem(UNDO_KEY);
+    if (undoRaw) {
+      const parsed = JSON.parse(undoRaw);
+      undoStack = Array.isArray(parsed.undoStack) ? parsed.undoStack : (Array.isArray(parsed) ? parsed : []);
+      redoStack = Array.isArray(parsed.redoStack) ? parsed.redoStack : [];
+    } else {
+      undoStack = []; redoStack = [];
+    }
+  } catch(e) { undoStack = []; redoStack = []; }
+
+  try {
+    const altRaw = localStorage.getItem(ALERTS_KEY);
+    alerts = altRaw ? JSON.parse(altRaw) : [];
+  } catch(e) { alerts = []; }
+}
+
+// ==================== UNDO / REDO ====================
+function pushUndo() {
+  undoStack.push(JSON.parse(JSON.stringify(students)));
+  if (undoStack.length > MAX_UNDO) undoStack.shift();
+  redoStack = []; // Clear redo on new action
+  saveUndoData();
+  updateUndoRedoBar();
+  resetUndoTimer();
+}
+
+function undoLastAction() {
+  if (undoStack.length === 0) return;
+  redoStack.push(JSON.parse(JSON.stringify(students)));
+  students = undoStack.pop();
+  saveStudents();
+  saveUndoData();
+  updateUndoRedoBar();
+  resetUndoTimer();
+  refreshCurrentSection();
+  showToast('Action undone', 'info');
+}
+
+function redoLastAction() {
+  if (redoStack.length === 0) return;
+  undoStack.push(JSON.parse(JSON.stringify(students)));
+  students = redoStack.pop();
+  saveStudents();
+  saveUndoData();
+  updateUndoRedoBar();
+  resetUndoTimer();
+  refreshCurrentSection();
+  showToast('Action redone', 'info');
+}
+
+function resetUndoTimer() {
+  undoBarActive = true;
+  updateUndoRedoBar();
+  if (undoTimeout) clearTimeout(undoTimeout);
+  undoTimeout = setTimeout(() => {
+    undoBarActive = false;
+    updateUndoRedoBar();
+  }, UNDO_TIMEOUT);
+}
+
+function updateUndoRedoBar() {
+  const bar = document.getElementById('undoRedoBar');
+  const undoBtn = document.getElementById('undoBtn');
+  const redoBtn = document.getElementById('redoBtn');
+  const undoCnt = document.getElementById('undoCount');
+  const redoCnt = document.getElementById('redoCount');
+
+  // Show bar on data-entry sections
+  const dataSections = ['register','assessments','classmarks','finance','attendance','conduct','reports','database'];
+  const show = dataSections.includes(currentSection) && (undoStack.length > 0 || redoStack.length > 0 || undoBarActive);
+  bar.style.display = show ? 'flex' : 'none';
+
+  undoBtn.disabled = undoStack.length === 0 || !undoBarActive;
+  redoBtn.disabled = redoStack.length === 0 || !undoBarActive;
+  undoCnt.textContent = undoStack.length;
+  redoCnt.textContent = redoStack.length;
+
+  if (!undoBarActive) bar.classList.add('deactivated');
+  else bar.classList.remove('deactivated');
+}
+
+// ==================== APPROVAL SYSTEM ====================
+function requestApproval(description, callback) {
+  if (!config.requireApproval) {
+    callback();
+    return;
+  }
+  approvalCallback = callback;
+  document.getElementById('approvalDesc').textContent = description;
+  document.getElementById('approvalPin').value = '';
+  document.getElementById('approvalError').textContent = '';
+  document.getElementById('approvalDialog').style.display = 'flex';
+  setTimeout(() => document.getElementById('approvalPin').focus(), 100);
+}
+
+function confirmApproval() {
+  const pin = document.getElementById('approvalPin').value.trim();
+  if (pin === config.masterPin || pin === config.headTeacherPin) {
+    document.getElementById('approvalDialog').style.display = 'none';
+    if (approvalCallback) approvalCallback();
+    approvalCallback = null;
+  } else {
+    document.getElementById('approvalError').textContent = 'Incorrect PIN. Try again.';
+  }
+}
+
+function cancelApproval() {
+  document.getElementById('approvalDialog').style.display = 'none';
+  approvalCallback = null;
+}
+
+// ==================== TOAST ====================
+function showToast(msg, type = 'success') {
+  const t = document.createElement('div');
+  t.className = 'toast toast-' + type;
+  t.textContent = msg;
+  document.getElementById('toastContainer').appendChild(t);
+  setTimeout(() => t.remove(), 3000);
+}
+
+// ==================== NAVIGATION ====================
+function showSection(section) {
+  currentSection = section;
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  const sec = document.getElementById('sec-' + section);
+  if (sec) sec.classList.add('active');
+
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.toggle('active', n.dataset.section === section));
+  document.querySelectorAll('.mob-nav-item').forEach(n => n.classList.toggle('active', n.dataset.section === section));
+
+  // Close sidebar on mobile
+  document.getElementById('sidebar').classList.remove('open');
+
+  // Refresh section data
+  refreshCurrentSection();
+  updateUndoRedoBar();
+}
+
+function refreshCurrentSection() {
+  switch(currentSection) {
+    case 'dashboard': renderDashboard(); break;
+    case 'database': initDatabaseFilters(); renderDatabase(); break;
+    case 'register': initRegister(); break;
+    case 'assessments': initAssessments(); break;
+    case 'classmarks': initClassMarks(); break;
+    case 'finance': initFinance(); break;
+    case 'attendance': initAttendance(); break;
+    case 'conduct': initConduct(); break;
+    case 'analytics': renderAnalytics(); break;
+    case 'announcements': renderAnnouncements(); break;
+    case 'reports': initReports(); break;
+    case 'admin': renderAdmin(); break;
+  }
+}
+
+function toggleSidebar() {
+  document.getElementById('sidebar').classList.toggle('open');
+}
+
+// ==================== DARK MODE ====================
+function toggleDarkMode() {
+  config.darkMode = !config.darkMode;
+  document.documentElement.setAttribute('data-theme', config.darkMode ? 'dark' : '');
+  document.getElementById('darkModeIcon').textContent = config.darkMode ? '☀️' : '🌙';
+  document.getElementById('darkModeLabel').textContent = config.darkMode ? 'Light Mode' : 'Dark Mode';
+  saveConfig();
+}
+
+function applyDarkMode() {
+  document.documentElement.setAttribute('data-theme', config.darkMode ? 'dark' : '');
+  document.getElementById('darkModeIcon').textContent = config.darkMode ? '☀️' : '🌙';
+  document.getElementById('darkModeLabel').textContent = config.darkMode ? 'Light Mode' : 'Dark Mode';
+}
+
+// ==================== HELPERS ====================
+function getAllClasses() {
+  // Returns flat list of all class options like "Grade 7 - 7A", "Grade 7", etc.
+  const classes = [];
+  if (!config.grades) return classes;
+  config.grades.forEach(g => {
+    if (g.subGrades && g.subGrades.length > 0) {
+      g.subGrades.forEach(sg => classes.push(g.name + ' - ' + sg));
+    }
+    classes.push(g.name);
+  });
+  return classes;
+}
+
+function getGradeForClass(className) {
+  // Given a class like "Grade 7 - 7A", find the grade object
+  if (!config.grades) return null;
+  const gradeName = className.split(' - ')[0];
+  return config.grades.find(g => g.name === gradeName) || null;
+}
+
+function getSubjectsForClass(className) {
+  const grade = getGradeForClass(className);
+  return grade ? [...grade.subjects] : ['Mathematics','English','Science'];
+}
+
+function getWhatsAppPhone(student) {
+  const wa = student.phones.find(p => p.isWhatsApp);
+  return wa ? wa.number : (student.phones.length > 0 ? student.phones[0].number : 'N/A');
+}
+
+function calcWeightedTotal(sub) {
+  const ca1 = parseFloat(sub.ca1) || 0;
+  const ca2 = parseFloat(sub.ca2) || 0;
+  const fin = parseFloat(sub.final) || 0;
+  return (ca1 * config.weight_ca1 / 100) + (ca2 * config.weight_ca2 / 100) + (fin * config.weight_final / 100);
+}
+
+function getLetterGrade(pct) {
+  if (pct >= config.gradeA) return 'A';
+  if (pct >= config.gradeB) return 'B';
+  if (pct >= config.gradeC) return 'C';
+  if (pct >= config.gradeD) return 'D';
+  return 'F';
+}
+
+function getFeeForClass(className) {
+  // Check per-class overrides first
+  if (config.feeStructure.perClass && config.feeStructure.perClass[className]) {
+    const pc = config.feeStructure.perClass[className];
+    return pc.categories ? pc.categories.reduce((s,c) => s + (parseFloat(c.amount)||0), 0) : 0;
+  }
+  return (config.feeStructure.categories || []).reduce((s,c) => s + (parseFloat(c.amount)||0), 0);
+}
+
+function getFeeCategoriesForClass(className) {
+  if (config.feeStructure.perClass && config.feeStructure.perClass[className]) {
+    return config.feeStructure.perClass[className].categories || config.feeStructure.categories;
+  }
+  return config.feeStructure.categories || [];
+}
+
+function genId() { return 'STU' + Date.now().toString(36).toUpperCase() + Math.random().toString(36).substr(2,3).toUpperCase(); }
+
+function compressPhoto(file, cb) {
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    const img = new Image();
+    img.onload = function() {
+      const canvas = document.createElement('canvas');
+      const MAX = 200;
+      let w = img.width, h = img.height;
+      if (w > h) { if (w > MAX) { h = h * MAX / w; w = MAX; } } else { if (h > MAX) { w = w * MAX / h; h = MAX; } }
+      canvas.width = w; canvas.height = h;
+      canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+      cb(canvas.toDataURL('image/jpeg', 0.7));
+    };
+    img.src = e.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+
+// ==================== LOCK SCREEN ====================
+function showLockScreen() {
+  document.getElementById('lockScreen').style.display = 'flex';
+  document.getElementById('lockError').textContent = '';
+  document.getElementById('lockPinInput').value = '';
+  setTimeout(() => document.getElementById('lockPinInput').focus(), 100);
+}
+
+function attemptUnlock() {
+  const pin = document.getElementById('lockPinInput').value.trim();
+  if (pin === config.appPin || pin === config.headTeacherPin || pin === config.masterPin) {
+    document.getElementById('lockScreen').style.display = 'none';
+    showApp();
+  } else {
+    document.getElementById('lockError').textContent = 'Incorrect PIN';
+    document.getElementById('lockPinInput').value = '';
+  }
+}
+
+// ==================== SETUP WIZARD ====================
+function showSetupWizard() {
+  document.getElementById('setupWizard').style.display = 'flex';
+}
+
+function completeSetup() {
+  const name = document.getElementById('wizSchoolName').value.trim();
+  const appPin = document.getElementById('wizAppPin').value.trim();
+  const headPin = document.getElementById('wizHeadPin').value.trim();
+  const masterPin = document.getElementById('wizMasterPin').value.trim();
+
+  if (!name) return showToast('Enter school name','error');
+  if (!appPin || appPin.length < 4) return showToast('App PIN must be 4+ digits','error');
+  if (!headPin || headPin.length < 4) return showToast('Head Teacher PIN must be 4+ digits','error');
+  if (!masterPin || masterPin.length < 4) return showToast('Master PIN must be 4+ digits','error');
+
+  config.isSetup = true;
+  config.schoolName = name;
+  config.appPin = appPin;
+  config.headTeacherPin = headPin;
+  config.masterPin = masterPin;
+  config.schools = { default: name };
+  saveConfig();
+  document.getElementById('setupWizard').style.display = 'none';
+  showApp();
+}
+
+// ==================== SHOW APP ====================
+function showApp() {
+  document.getElementById('appContainer').style.display = 'block';
+  document.getElementById('sidebarSchoolName').textContent = config.schoolName;
+  const mh = document.getElementById('mobileHeader');
+  const msn = document.getElementById('mobileSchoolName');
+  if (window.innerWidth <= 768) { mh.style.display = 'flex'; msn.textContent = config.schoolName; }
+  applyDarkMode();
+  showSection('dashboard');
+}
+
+// ==================== DASHBOARD ====================
+function renderDashboard() {
+  const total = students.length;
+  const male = students.filter(s => s.sex === 'Male').length;
+  const female = students.filter(s => s.sex === 'Female').length;
+  const totalFees = students.reduce((s,st) => s + (st.finance?.total || 0), 0);
+  const totalPaid = students.reduce((s,st) => s + (st.finance?.paid || 0), 0);
+  const balance = totalFees - totalPaid;
+
+  document.getElementById('dashStats').innerHTML = `
+    <div class="stat-card"><div class="stat-value">${total}</div><div class="stat-label">Total Students</div></div>
+    <div class="stat-card" style="border-left-color:#2E86C1"><div class="stat-value">${male}</div><div class="stat-label">Male Students</div></div>
+    <div class="stat-card" style="border-left-color:#E74C3C"><div class="stat-value">${female}</div><div class="stat-label">Female Students</div></div>
+    <div class="stat-card" style="border-left-color:var(--success)"><div class="stat-value">K${totalPaid.toLocaleString()}</div><div class="stat-label">Fees Collected</div></div>
+    <div class="stat-card" style="border-left-color:var(--warning)"><div class="stat-value">K${balance.toLocaleString()}</div><div class="stat-label">Outstanding Balance</div></div>
+    <div class="stat-card" style="border-left-color:var(--info)"><div class="stat-value">${config.grades.length}</div><div class="stat-label">Grades</div></div>
+  `;
+
+  // Quick stats by grade
+  let qsHtml = '';
+  config.grades.forEach(g => {
+    const gStudents = students.filter(s => s.class.startsWith(g.name));
+    qsHtml += `<div class="stat-card"><div class="stat-value">${gStudents.length}</div><div class="stat-label">${g.name}</div></div>`;
+  });
+  document.getElementById('dashQuickStats').innerHTML = qsHtml;
+
+  // Show active announcement
+  if (config.activeAnnouncement) {
+    const existing = document.getElementById('dashAnnouncement');
+    if (existing) existing.remove();
+    const ann = document.createElement('div');
+    ann.id = 'dashAnnouncement';
+    ann.className = 'card';
+    ann.style.borderLeft = '4px solid var(--warning)';
+    ann.innerHTML = `<strong>📢 Announcement:</strong> ${escHtml(config.activeAnnouncement)}`;
+    document.getElementById('sec-dashboard').insertBefore(ann, document.getElementById('sec-dashboard').children[2]);
+  }
+}
+
+// ==================== DATABASE SECTION ====================
+function initDatabaseFilters() {
+  const gf = document.getElementById('dbGradeFilter');
+  const sf = document.getElementById('dbSubFilter');
+  gf.innerHTML = '<option value="">All Grades</option>';
+  config.grades.forEach(g => { gf.innerHTML += `<option value="${esc(g.name)}">${esc(g.name)}</option>`; });
+  sf.innerHTML = '<option value="">All Sub-grades</option>';
+}
+
+function updateSubGradeFilter() {
+  const gf = document.getElementById('dbGradeFilter').value;
+  const sf = document.getElementById('dbSubFilter');
+  sf.innerHTML = '<option value="">All Sub-grades</option>';
+  if (gf) {
+    const grade = config.grades.find(g => g.name === gf);
+    if (grade && grade.subGrades) {
+      grade.subGrades.forEach(sg => { sf.innerHTML += `<option value="${esc(sg)}">${esc(sg)}</option>`; });
+    }
+  }
+}
+
+document.getElementById('dbGradeFilter')?.addEventListener('change', () => { updateSubGradeFilter(); renderDatabase(); });
+document.getElementById('dbSubFilter')?.addEventListener('change', renderDatabase);
+
+// Window resize handler for mobile header
+window.addEventListener('resize', () => {
+  const mh = document.getElementById('mobileHeader');
+  const msn = document.getElementById('mobileSchoolName');
+  if (window.innerWidth <= 768) { mh.style.display = 'flex'; msn.textContent = config.schoolName || ''; }
+  else { mh.style.display = 'none'; }
+});
+
+function renderDatabase() {
+  const gradeFilter = document.getElementById('dbGradeFilter').value;
+  const subFilter = document.getElementById('dbSubFilter').value;
+  const search = (document.getElementById('dbSearch').value || '').toLowerCase();
+
+  let filtered = students.filter(s => {
+    if (gradeFilter && !s.class.startsWith(gradeFilter)) return false;
+    if (subFilter && !s.class.includes(subFilter)) return false;
+    if (search && !s.name.toLowerCase().includes(search) && !s.id.toLowerCase().includes(search)) return false;
+    return true;
+  });
+
+  // Group by grade
+  const groups = {};
+  filtered.forEach(s => {
+    const gName = s.class.split(' - ')[0] || 'Unassigned';
+    if (!groups[gName]) groups[gName] = [];
+    groups[gName].push(s);
+  });
+
+  let html = '';
+  const sortedGradeNames = Object.keys(groups).sort();
+
+  sortedGradeNames.forEach(gName => {
+    const gStudents = groups[gName];
+    html += `<div class="grade-group">
+      <div class="grade-group-header" onclick="toggleGradeGroup(this)">
+        <span><span class="expand-icon rotated">▶</span> ${escHtml(gName)}</span>
+        <span class="count">${gStudents.length} student${gStudents.length!==1?'s':''}</span>
+      </div>
+      <div class="grade-group-body">
+        <div class="table-wrap"><table>
+          <tr><th>Photo</th><th>Name</th><th>ID</th><th>Sex</th><th>Class</th><th>WhatsApp</th><th>Fee Status</th><th>Subjects</th><th>Actions</th></tr>`;
+
+    gStudents.forEach(s => {
+      const sIdx = students.indexOf(s);
+      const feePct = s.finance.total > 0 ? Math.round(s.finance.paid / s.finance.total * 100) : 0;
+      const feeBadge = feePct >= 100 ? 'badge-paid' : feePct > 0 ? 'badge-partial' : 'badge-unpaid';
+      const feeLabel = feePct >= 100 ? 'Paid' : feePct > 0 ? feePct+'%' : 'Unpaid';
+      const sexBadge = s.sex === 'Male' ? 'badge-m' : s.sex === 'Female' ? 'badge-f' : '';
+      const sexLabel = s.sex === 'Male' ? 'M' : s.sex === 'Female' ? 'F' : '-';
+
+      if (editingStudentIdx === sIdx) {
+        // Inline edit mode
+        html += `<tr class="inline-edit">
+          <td>${s.photo ? `<img src="${s.photo}" class="photo-avatar">` : '<div class="photo-placeholder">'+escHtml(s.name.charAt(0))+'</div>'}</td>
+          <td><input type="text" value="${esc(s.name)}" id="ie-name-${sIdx}"></td>
+          <td>${escHtml(s.id)}</td>
+          <td><select id="ie-sex-${sIdx}"><option value="Male" ${s.sex==='Male'?'selected':''}>Male</option><option value="Female" ${s.sex==='Female'?'selected':''}>Female</option></select></td>
+          <td><select id="ie-class-${sIdx}">${getAllClasses().map(c=>`<option value="${esc(c)}" ${s.class===c?'selected':''}>${escHtml(c)}</option>`).join('')}</select></td>
+          <td><input type="text" value="${esc(getWhatsAppPhone(s))}" id="ie-phone-${sIdx}" style="width:100px"></td>
+          <td>${feeLabel}</td>
+          <td>${s.subjects.length}</td>
+          <td><button class="btn btn-success btn-sm" onclick="saveInlineEdit(${sIdx})">✓</button> <button class="btn btn-outline btn-sm" onclick="cancelInlineEdit()">✗</button></td>
+        </tr>`;
+      } else {
+        html += `<tr>
+          <td>${s.photo ? `<img src="${s.photo}" class="photo-avatar">` : '<div class="photo-placeholder">'+escHtml(s.name.charAt(0))+'</div>'}</td>
+          <td>${escHtml(s.name)}</td>
+          <td>${escHtml(s.id)}</td>
+          <td><span class="badge ${sexBadge}">${sexLabel}</span></td>
+          <td>${escHtml(s.class)}</td>
+          <td><span class="badge badge-wa">${escHtml(getWhatsAppPhone(s))}</span></td>
+          <td><span class="badge ${feeBadge}">${feeLabel}</span></td>
+          <td>${s.subjects.length}</td>
+          <td>
+            <button class="btn btn-info btn-sm" onclick="viewProfile(${sIdx})">👁</button>
+            <button class="btn btn-warning btn-sm" onclick="startInlineEdit(${sIdx})">✏️</button>
+            <button class="btn btn-danger btn-sm" onclick="deleteStudent(${sIdx})">🗑</button>
+          </td>
+        </tr>`;
+      }
+    });
+
+    html += `</table></div></div></div>`;
+  });
+
+  if (filtered.length === 0) {
+    html = '<div class="card" style="text-align:center;padding:40px;color:var(--text-light)"><div style="font-size:48px">📂</div>No students found</div>';
+  }
+
+  document.getElementById('databaseContent').innerHTML = html;
+}
+
+function toggleGradeGroup(header) {
+  const body = header.nextElementSibling;
+  const icon = header.querySelector('.expand-icon');
+  body.classList.toggle('collapsed');
+  icon.classList.toggle('rotated');
+}
+
+function startInlineEdit(idx) {
+  editingStudentIdx = idx;
+  renderDatabase();
+}
+
+function cancelInlineEdit() {
+  editingStudentIdx = -1;
+  renderDatabase();
+}
+
+function saveInlineEdit(idx) {
+  requestApproval('Edit student: ' + students[idx].name, () => {
+    pushUndo();
+    const s = students[idx];
+    s.name = document.getElementById('ie-name-'+idx).value.trim() || s.name;
+    s.sex = document.getElementById('ie-sex-'+idx).value;
+    s.class = document.getElementById('ie-class-'+idx).value;
+    // Update WhatsApp phone
+    const newPhone = document.getElementById('ie-phone-'+idx).value.trim();
+    if (newPhone) {
+      const waIdx = s.phones.findIndex(p => p.isWhatsApp);
+      if (waIdx >= 0) s.phones[waIdx].number = newPhone;
+      else s.phones.push({ number: newPhone, label: 'WhatsApp', isWhatsApp: true });
+    }
+    editingStudentIdx = -1;
+    saveStudents();
+    renderDatabase();
+    showToast('Student updated');
+  });
+}
+
+function deleteStudent(idx) {
+  if (!confirm('Delete student ' + students[idx].name + '?')) return;
+  requestApproval('Delete student: ' + students[idx].name, () => {
+    pushUndo();
+    students.splice(idx, 1);
+    saveStudents();
+    renderDatabase();
+    showToast('Student deleted');
+  });
+}
+
+function viewProfile(idx) {
+  viewingProfileIdx = idx;
+  renderProfile(idx);
+  currentSection = 'profile';
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.getElementById('sec-profile').classList.add('active');
+}
+
+function exportFilteredData() {
+  const gradeFilter = document.getElementById('dbGradeFilter').value;
+  const subFilter = document.getElementById('dbSubFilter').value;
+  const search = (document.getElementById('dbSearch').value || '').toLowerCase();
+  let filtered = students.filter(s => {
+    if (gradeFilter && !s.class.startsWith(gradeFilter)) return false;
+    if (subFilter && !s.class.includes(subFilter)) return false;
+    if (search && !s.name.toLowerCase().includes(search) && !s.id.toLowerCase().includes(search)) return false;
+    return true;
+  });
+  const data = filtered.map(s => ({
+    Name: s.name, ID: s.id, Sex: s.sex, Class: s.class,
+    WhatsApp: getWhatsAppPhone(s), TotalFee: s.finance.total, Paid: s.finance.paid,
+    Subjects: s.subjects.map(sub => sub.name).join(', ')
+  }));
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'students_export.json';
+  a.click();
+  showToast('Data exported');
+}
+
+// ==================== STUDENT PROFILE ====================
+function renderProfile(idx) {
+  const s = students[idx];
+  const feePct = s.finance.total > 0 ? Math.round(s.finance.paid / s.finance.total * 100) : 0;
+  const avgScore = s.subjects.length > 0 ? (s.subjects.reduce((sum,sub) => sum + calcWeightedTotal(sub), 0) / s.subjects.length).toFixed(1) : 'N/A';
+
+  let phonesHtml = s.phones.map((p, pi) => `
+    <div class="phone-entry">
+      <input type="text" value="${esc(p.number)}" id="prof-phone-${pi}" placeholder="Number">
+      <input type="text" value="${esc(p.label)}" id="prof-label-${pi}" placeholder="Label" style="width:120px">
+      <div class="wa-check"><input type="checkbox" id="prof-wa-${pi}" ${p.isWhatsApp?'checked':''}> WA</div>
+      <button class="btn btn-danger btn-sm" onclick="removeProfilePhone(${idx},${pi})" style="padding:2px 6px">✕</button>
+    </div>`).join('');
+
+  let subjectRows = s.subjects.map((sub, si) => {
+    const tot = calcWeightedTotal(sub);
+    return `<tr>
+      <td>${escHtml(sub.name)}</td>
+      <td>${sub.ca1 ?? '-'}</td><td>${sub.ca2 ?? '-'}</td><td>${sub.final ?? '-'}</td>
+      <td><strong>${tot.toFixed(1)}</strong></td>
+      <td>${getLetterGrade(tot)}</td>
+    </tr>`;
+  }).join('');
+
+  let conductRows = s.conduct.map(c => `<tr><td>${escHtml(c.type)}</td><td>${escHtml(c.date)}</td><td>${escHtml(c.description)}</td></tr>`).join('');
+  let paymentRows = s.paymentHistory.map(p => `<tr><td>K${(p.amount||0).toLocaleString()}</td><td>${escHtml(p.date||'')}</td><td>${escHtml(p.recordedAt||'')}</td></tr>`).join('');
+
+  let feeBreakdown = '';
+  if (s.finance.categories && s.finance.categories.length > 0) {
+    feeBreakdown = s.finance.categories.map(c => `<div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid var(--border)"><span>${escHtml(c.name)}</span><strong>K${(parseFloat(c.amount)||0).toLocaleString()}</strong></div>`).join('');
+  } else {
+    feeBreakdown = `<div style="display:flex;justify-content:space-between;padding:4px 0"><span>Total Fee</span><strong>K${(s.finance.total||0).toLocaleString()}</strong></div>`;
+  }
+
+  document.getElementById('profileContent').innerHTML = `
+    <div class="card" style="display:flex;gap:20px;flex-wrap:wrap;align-items:flex-start">
+      <div style="text-align:center">
+        ${s.photo ? `<img src="${s.photo}" style="width:100px;height:100px;border-radius:50%;object-fit:cover;border:3px solid var(--primary)">` : '<div style="width:100px;height:100px;border-radius:50%;background:var(--primary-light);color:#fff;display:flex;align-items:center;justify-content:center;font-size:36px;font-weight:700">'+escHtml(s.name.charAt(0))+'</div>'}
+        <div style="margin-top:8px"><span class="badge ${s.sex==='Male'?'badge-m':'badge-f'}">${s.sex==='Male'?'♂ Male':s.sex==='Female'?'♀ Female':''}</span></div>
+      </div>
+      <div style="flex:1;min-width:200px">
+        <h2 style="color:var(--primary);margin-bottom:4px">${escHtml(s.name)}</h2>
+        <div style="color:var(--text-light)">ID: ${escHtml(s.id)} | Class: ${escHtml(s.class)}</div>
+        <div style="margin-top:8px"><strong>Average Score:</strong> ${avgScore}% | <strong>Fee Status:</strong> ${feePct}% paid</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header"><span class="card-title">📞 Phone Numbers</span><button class="btn btn-outline btn-sm" onclick="addProfilePhone()">+ Add</button></div>
+      ${phonesHtml}
+      <button class="btn btn-primary btn-sm" onclick="saveProfilePhones(${idx})" style="margin-top:8px">Save Phones</button>
+    </div>
+
+    <div class="card">
+      <div class="card-header"><span class="card-title">💰 Fee Breakdown</span></div>
+      ${feeBreakdown}
+      <div style="display:flex;justify-content:space-between;padding:8px 0;font-size:16px;border-top:2px solid var(--primary);margin-top:4px">
+        <span>Total Fee</span><strong>K${(s.finance.total||0).toLocaleString()}</strong>
+      </div>
+      <div style="display:flex;justify-content:space-between;padding:4px 0;color:var(--success)">
+        <span>Paid</span><strong>K${(s.finance.paid||0).toLocaleString()}</strong>
+      </div>
+      <div style="display:flex;justify-content:space-between;padding:4px 0;color:var(--accent)">
+        <span>Balance</span><strong>K${(s.finance.total-s.finance.paid).toLocaleString()}</strong>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header"><span class="card-title">📝 Academic Results</span></div>
+      <div class="table-wrap"><table>
+        <tr><th>Subject</th><th>CA1</th><th>CA2</th><th>Final</th><th>Total</th><th>Grade</th></tr>
+        ${subjectRows || '<tr><td colspan="6" style="text-align:center;color:var(--text-light)">No subjects</td></tr>'}
+      </table></div>
+    </div>
+
+    <div class="card">
+      <div class="card-header"><span class="card-title">⚖️ Conduct Records</span></div>
+      <div class="table-wrap"><table>
+        <tr><th>Type</th><th>Date</th><th>Description</th></tr>
+        ${conductRows || '<tr><td colspan="3" style="text-align:center;color:var(--text-light)">No records</td></tr>'}
+      </table></div>
+    </div>
+
+    <div class="card">
+      <div class="card-header"><span class="card-title">💳 Payment History</span></div>
+      <div class="table-wrap"><table>
+        <tr><th>Amount</th><th>Date</th><th>Recorded</th></tr>
+        ${paymentRows || '<tr><td colspan="3" style="text-align:center;color:var(--text-light)">No payments</td></tr>'}
+      </table></div>
+    </div>`;
+}
+
+function addProfilePhone() {
+  if (viewingProfileIdx < 0) return;
+  const s = students[viewingProfileIdx];
+  s.phones.push({ number: '', label: 'Phone', isWhatsApp: false });
+  renderProfile(viewingProfileIdx);
+  showToast('Phone field added - click Save when done', 'info');
+}
+
+function removeProfilePhone(sIdx, phoneIdx) {
+  if (students[sIdx].phones.length <= 1) return showToast('Must have at least one phone number','error');
+  students[sIdx].phones.splice(phoneIdx, 1);
+  // Ensure one WhatsApp primary
+  if (!students[sIdx].phones.some(p => p.isWhatsApp) && students[sIdx].phones.length > 0) students[sIdx].phones[0].isWhatsApp = true;
+  renderProfile(sIdx);
+}
+
+function saveProfilePhones(idx) {
+  requestApproval('Update phone numbers for ' + students[idx].name, () => {
+    pushUndo();
+    const s = students[idx];
+    s.phones = [];
+    let pi = 0;
+    while (document.getElementById('prof-phone-' + pi)) {
+      const num = document.getElementById('prof-phone-' + pi).value.trim();
+      const label = document.getElementById('prof-label-' + pi).value.trim() || 'Phone';
+      const isWA = document.getElementById('prof-wa-' + pi).checked;
+      if (num) s.phones.push({ number: num, label, isWhatsApp: isWA });
+      pi++;
+    }
+    if (s.phones.length === 0) s.phones.push({ number: '', label: 'Primary', isWhatsApp: true });
+    // Ensure at least one WhatsApp primary
+    if (!s.phones.some(p => p.isWhatsApp) && s.phones.length > 0) s.phones[0].isWhatsApp = true;
+    saveStudents();
+    renderProfile(idx);
+    showToast('Phone numbers updated');
+  });
+}
+
+// ==================== REGISTRATION ====================
+function initRegister() {
+  const classSelect = document.getElementById('regClass');
+  classSelect.innerHTML = '<option value="">Select Class</option>';
+  getAllClasses().forEach(c => { classSelect.innerHTML += `<option value="${esc(c)}">${escHtml(c)}</option>`; });
+
+  // Init phone fields
+  if (document.getElementById('regPhones').children.length === 0) {
+    addRegPhone(); addRegPhone();
+    // Set first as WhatsApp
+    const firstWa = document.querySelector('#regPhones .wa-check input');
+    if (firstWa) firstWa.checked = true;
+  }
+}
+
+function addRegPhone() {
+  const container = document.getElementById('regPhones');
+  const idx = container.children.length;
+  const div = document.createElement('div');
+  div.className = 'phone-entry';
+  div.innerHTML = `
+    <input type="tel" placeholder="Phone number" class="reg-phone-num">
+    <input type="text" placeholder="Label (e.g. Parent)" class="reg-phone-label" style="width:120px">
+    <div class="wa-check"><input type="checkbox" class="reg-phone-wa"> WA</div>
+    <button class="btn btn-danger btn-sm" onclick="this.parentElement.remove()" style="padding:2px 6px">✕</button>`;
+  container.appendChild(div);
+}
+
+function handleRegPhoto(event) {
+  const file = event.target.files[0];
+  if (!file) { regPhotoData = null; return; }
+  compressPhoto(file, data => {
+    regPhotoData = data;
+    document.getElementById('regPhotoPreview').innerHTML = `<img src="${data}" style="width:80px;height:80px;border-radius:50%;object-fit:cover">`;
+  });
+}
+
+function registerStudent() {
+  const name = document.getElementById('regName').value.trim();
+  const sex = document.getElementById('regSex').value;
+  const id = document.getElementById('regId').value.trim() || genId();
+  const cls = document.getElementById('regClass').value;
+
+  if (!name) return showToast('Enter student name','error');
+  if (!sex) return showToast('Select sex','error');
+  if (!cls) return showToast('Select class','error');
+
+  // Collect phones
+  const phoneNums = document.querySelectorAll('#regPhones .reg-phone-num');
+  const phoneLabels = document.querySelectorAll('#regPhones .reg-phone-label');
+  const phoneWAs = document.querySelectorAll('#regPhones .reg-phone-wa');
+  const phones = [];
+  let hasWA = false;
+  phoneNums.forEach((el, i) => {
+    const num = el.value.trim();
+    if (num) {
+      const isWA = phoneWAs[i]?.checked || false;
+      phones.push({ number: num, label: phoneLabels[i]?.value.trim() || 'Phone', isWhatsApp: isWA });
+      if (isWA) hasWA = true;
+    }
+  });
+  if (phones.length === 0) phones.push({ number: '', label: 'Primary', isWhatsApp: true });
+  if (!hasWA && phones.length > 0) phones[0].isWhatsApp = true;
+
+  // Get subjects from class
+  const subjects = getSubjectsForClass(cls).map(name => ({ name, ca1: '', ca2: '', final: '' }));
+
+  // Get fee from structure
+  const feeCategories = getFeeCategoriesForClass(cls).map(c => ({ name: c.name, amount: parseFloat(c.amount) || 0 }));
+  const totalFee = feeCategories.reduce((s, c) => s + c.amount, 0);
+
+  const student = {
+    id, name, sex, class: cls,
+    phones, subjects,
+    finance: { total: totalFee, paid: 0, categories: feeCategories },
+    paymentHistory: [], attendance: {}, conduct: [],
+    photo: regPhotoData || '',
+    terms: {}
+  };
+
+  requestApproval('Register new student: ' + name, () => {
+    pushUndo();
+    students.push(student);
+    saveStudents();
+    showToast('Student registered successfully');
+    // Clear form
+    document.getElementById('regName').value = '';
+    document.getElementById('regSex').value = '';
+    document.getElementById('regId').value = '';
+    document.getElementById('regClass').value = '';
+    document.getElementById('regPhones').innerHTML = '';
+    document.getElementById('regPhotoPreview').innerHTML = '';
+    regPhotoData = null;
+    document.getElementById('regPhoto').value = '';
+    addRegPhone(); addRegPhone();
+    const firstWa = document.querySelector('#regPhones .wa-check input');
+    if (firstWa) firstWa.checked = true;
+  });
+}
+
+// ==================== ASSESSMENTS ====================
+function initAssessments() {
+  const sel = document.getElementById('assessStudent');
+  sel.innerHTML = '<option value="">Select Student</option>';
+  students.forEach((s, i) => { sel.innerHTML += `<option value="${i}">${escHtml(s.name)} (${escHtml(s.id)})</option>`; });
+
+  const termSel = document.getElementById('assessTerm');
+  termSel.innerHTML = '<option value="current">Current Term</option><option value="Term 1">Term 1</option><option value="Term 2">Term 2</option><option value="Term 3">Term 3</option>';
+}
+
+function loadAssessment() {
+  const idx = document.getElementById('assessStudent').value;
+  if (idx === '') { document.getElementById('assessFields').innerHTML = ''; return; }
+  const s = students[idx];
+  const gradeSubjects = getSubjectsForClass(s.class);
+
+  // Ensure student has all grade subjects
+  gradeSubjects.forEach(subName => {
+    if (!s.subjects.find(sub => sub.name === subName)) {
+      s.subjects.push({ name: subName, ca1: '', ca2: '', final: '' });
+    }
+  });
+
+  let html = '<div class="table-wrap"><table><tr><th>Subject</th><th>CA1</th><th>CA2</th><th>Final</th><th>Total</th><th>Grade</th></tr>';
+  s.subjects.forEach((sub, si) => {
+    const tot = calcWeightedTotal(sub);
+    html += `<tr>
+      <td>
+        <select class="assess-subject-name" data-si="${si}" style="width:100%">
+          ${gradeSubjects.map(gs => `<option value="${esc(gs)}" ${sub.name===gs?'selected':''}>${escHtml(gs)}</option>`).join('')}
+          <option value="${esc(sub.name)}" ${!gradeSubjects.includes(sub.name)?'selected':''}>${escHtml(sub.name)} (custom)</option>
+        </select>
+      </td>
+      <td><input type="number" min="0" max="100" value="${sub.ca1??''}" class="assess-ca1" data-si="${si}" style="width:70px"></td>
+      <td><input type="number" min="0" max="100" value="${sub.ca2??''}" class="assess-ca2" data-si="${si}" style="width:70px"></td>
+      <td><input type="number" min="0" max="100" value="${sub.final??''}" class="assess-final" data-si="${si}" style="width:70px"></td>
+      <td><strong>${tot.toFixed(1)}</strong></td>
+      <td>${getLetterGrade(tot)}</td>
+    </tr>`;
+  });
+  html += '</table></div>';
+  html += '<button class="btn btn-outline btn-sm" onclick="addAssessSubject()" style="margin-top:8px">+ Add Custom Subject</button>';
+  html += ' <button class="btn btn-danger btn-sm" onclick="removeLastAssessSubject()" style="margin-top:8px">- Remove Last Subject</button>';
+  document.getElementById('assessFields').innerHTML = html;
+}
+
+function addAssessSubject() {
+  const idx = document.getElementById('assessStudent').value;
+  if (idx === '') return;
+  students[idx].subjects.push({ name: 'New Subject', ca1: '', ca2: '', final: '' });
+  loadAssessment();
+}
+
+function removeLastAssessSubject() {
+  const idx = document.getElementById('assessStudent').value;
+  if (idx === '' || students[idx].subjects.length === 0) return;
+  students[idx].subjects.pop();
+  loadAssessment();
+}
+
+function saveAssessment() {
+  const idx = document.getElementById('assessStudent').value;
+  if (idx === '') return showToast('Select a student','error');
+  const s = students[idx];
+
+  requestApproval('Save assessment marks for ' + s.name, () => {
+    pushUndo();
+    const termKey = document.getElementById('assessTerm').value;
+    // Save current subjects to term
+    if (termKey !== 'current') {
+      s.terms[termKey] = JSON.parse(JSON.stringify(s.subjects));
+    }
+
+    // Read values from inputs
+    s.subjects.forEach((sub, si) => {
+      const nameEl = document.querySelector(`.assess-subject-name[data-si="${si}"]`);
+      const ca1El = document.querySelector(`.assess-ca1[data-si="${si}"]`);
+      const ca2El = document.querySelector(`.assess-ca2[data-si="${si}"]`);
+      const finalEl = document.querySelector(`.assess-final[data-si="${si}"]`);
+      if (nameEl) sub.name = nameEl.value;
+      if (ca1El) sub.ca1 = ca1El.value;
+      if (ca2El) sub.ca2 = ca2El.value;
+      if (finalEl) sub.final = finalEl.value;
+    });
+
+    saveStudents();
+    showToast('Assessment saved');
+    loadAssessment();
+  });
+}
+
+// ==================== CLASS MARKS ====================
+function initClassMarks() {
+  const cls = document.getElementById('cmClass');
+  cls.innerHTML = '<option value="">Select Class</option>';
+  getAllClasses().forEach(c => { cls.innerHTML += `<option value="${esc(c)}">${escHtml(c)}</option>`; });
+  loadCMSubjects();
+}
+
+function loadCMSubjects() {
+  const cls = document.getElementById('cmClass').value;
+  const subSel = document.getElementById('cmSubject');
+  subSel.innerHTML = '<option value="">Select Subject</option>';
+  if (!cls) return;
+  const subjects = getSubjectsForClass(cls);
+  subjects.forEach(s => { subSel.innerHTML += `<option value="${esc(s)}">${escHtml(s)}</option>`; });
+}
+
+document.getElementById('cmClass')?.addEventListener('change', () => { loadCMSubjects(); loadClassMarks(); });
+
+function loadClassMarks() {
+  const cls = document.getElementById('cmClass').value;
+  const sub = document.getElementById('cmSubject').value;
+  const type = document.getElementById('cmType').value;
+  if (!cls || !sub) { document.getElementById('classMarksTable').innerHTML = ''; return; }
+
+  const clsStudents = students.filter(s => s.class === cls);
+  if (clsStudents.length === 0) {
+    document.getElementById('classMarksTable').innerHTML = '<p style="color:var(--text-light)">No students in this class</p>';
+    return;
+  }
+
+  let html = '<table><tr><th>Name</th><th>ID</th><th>' + type.toUpperCase() + ' Mark</th></tr>';
+  clsStudents.forEach(s => {
+    const subObj = s.subjects.find(x => x.name === sub);
+    const val = subObj ? (subObj[type] ?? '') : '';
+    const sIdx = students.indexOf(s);
+    html += `<tr><td>${escHtml(s.name)}</td><td>${escHtml(s.id)}</td><td><input type="number" min="0" max="100" value="${val}" class="cm-mark" data-idx="${sIdx}" style="width:80px"></td></tr>`;
+  });
+  html += '</table>';
+  document.getElementById('classMarksTable').innerHTML = html;
+}
+
+function saveClassMarks() {
+  const cls = document.getElementById('cmClass').value;
+  const sub = document.getElementById('cmSubject').value;
+  const type = document.getElementById('cmType').value;
+  if (!cls || !sub) return showToast('Select class and subject','error');
+
+  requestApproval('Save class marks for ' + sub + ' (' + type.toUpperCase() + ')', () => {
+    pushUndo();
+    document.querySelectorAll('.cm-mark').forEach(el => {
+      const idx = parseInt(el.dataset.idx);
+      const s = students[idx];
+      let subObj = s.subjects.find(x => x.name === sub);
+      if (!subObj) { subObj = { name: sub, ca1: '', ca2: '', final: '' }; s.subjects.push(subObj); }
+      subObj[type] = el.value;
+    });
+    saveStudents();
+    showToast('Class marks saved');
+  });
+}
+
+// ==================== FINANCE ====================
+function initFinance() {
+  const sel = document.getElementById('finStudent');
+  sel.innerHTML = '<option value="">Select Student</option>';
+  students.forEach((s, i) => { sel.innerHTML += `<option value="${i}">${escHtml(s.name)} (${escHtml(s.id)})</option>`; });
+
+  const bcls = document.getElementById('bulkFeeClass');
+  bcls.innerHTML = '<option value="">Select Class</option>';
+  getAllClasses().forEach(c => { bcls.innerHTML += `<option value="${esc(c)}">${escHtml(c)}</option>`; });
+}
+
+function loadFinance() {
+  const idx = document.getElementById('finStudent').value;
+  if (idx === '') { document.getElementById('financeContent').innerHTML = ''; return; }
+  const s = students[idx];
+  const feePct = s.finance.total > 0 ? Math.round(s.finance.paid / s.finance.total * 100) : 0;
+
+  let feeBreakdown = '';
+  if (s.finance.categories && s.finance.categories.length > 0) {
+    feeBreakdown = '<div style="margin-bottom:12px"><strong>Fee Breakdown:</strong>';
+    s.finance.categories.forEach((c, ci) => {
+      feeBreakdown += `<div style="display:flex;justify-content:space-between;align-items:center;padding:4px 0;border-bottom:1px solid var(--border)">
+        <span>${escHtml(c.name)}</span>
+        <input type="number" value="${c.amount}" id="fin-cat-${ci}" style="width:100px;text-align:right" onchange="updateFinTotal(${idx})">
+      </div>`;
+    });
+    feeBreakdown += '</div>';
+  }
+
+  let paymentRows = s.paymentHistory.map(p => `<tr><td>K${(p.amount||0).toLocaleString()}</td><td>${escHtml(p.date||'')}</td><td>${escHtml(p.recordedAt||'')}</td></tr>`).join('');
+
+  document.getElementById('financeContent').innerHTML = `
+    <div style="margin-top:12px">
+      ${feeBreakdown}
+      <div style="display:flex;justify-content:space-between;padding:8px 0;font-size:16px;font-weight:700;border-top:2px solid var(--primary)">
+        <span>Total Fee</span><span id="finTotal">K${(s.finance.total||0).toLocaleString()}</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;padding:4px 0;color:var(--success)">
+        <span>Paid</span><span>K${(s.finance.paid||0).toLocaleString()} (${feePct}%)</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;padding:4px 0;color:var(--accent)">
+        <span>Balance</span><span>K${(s.finance.total-s.finance.paid).toLocaleString()}</span>
+      </div>
+    </div>
+
+    <div style="margin-top:16px;padding-top:12px;border-top:1px solid var(--border)">
+      <strong>Record Payment</strong>
+      <div class="form-row" style="margin-top:8px">
+        <div class="form-group"><label>Amount</label><input type="number" id="finPayAmount" placeholder="Amount"></div>
+        <div class="form-group"><label>Date</label><input type="date" id="finPayDate"></div>
+      </div>
+      <button class="btn btn-success btn-sm" onclick="recordPayment(${idx})">Record Payment</button>
+    </div>
+
+    <div style="margin-top:16px">
+      <strong>Payment History</strong>
+      <div class="table-wrap" style="margin-top:8px"><table>
+        <tr><th>Amount</th><th>Date</th><th>Recorded</th></tr>
+        ${paymentRows || '<tr><td colspan="3" style="text-align:center;color:var(--text-light)">No payments</td></tr>'}
+      </table></div>
+    </div>`;
+}
+
+function updateFinTotal(idx) {
+  const s = students[idx];
+  let total = 0;
+  s.finance.categories.forEach((c, ci) => {
+    const el = document.getElementById('fin-cat-' + ci);
+    if (el) { c.amount = parseFloat(el.value) || 0; }
+    total += c.amount;
+  });
+  s.finance.total = total;
+  document.getElementById('finTotal').textContent = 'K' + total.toLocaleString();
+}
+
+function recordPayment(idx) {
+  const amount = parseFloat(document.getElementById('finPayAmount').value) || 0;
+  const date = document.getElementById('finPayDate').value || new Date().toISOString().split('T')[0];
+  if (amount <= 0) return showToast('Enter a valid amount','error');
+
+  requestApproval('Record payment K' + amount.toLocaleString() + ' for ' + students[idx].name, () => {
+    pushUndo();
+    students[idx].finance.paid += amount;
+    students[idx].paymentHistory.push({ amount, date, recordedAt: new Date().toISOString() });
+    saveStudents();
+    loadFinance();
+    showToast('Payment recorded');
+  });
+}
+
+function applyBulkFee() {
+  const cls = document.getElementById('bulkFeeClass').value;
+  const amount = parseFloat(document.getElementById('bulkFeeAmount').value) || 0;
+  if (!cls) return showToast('Select a class','error');
+  if (amount <= 0) return showToast('Enter a valid amount','error');
+
+  requestApproval('Set bulk fee K' + amount.toLocaleString() + ' for class ' + cls, () => {
+    pushUndo();
+    students.filter(s => s.class === cls).forEach(s => {
+      s.finance.total = amount;
+      s.finance.categories = [{ name: 'Total Fees', amount }];
+    });
+    saveStudents();
+    showToast('Bulk fee applied to ' + cls);
+  });
+}
+
+// ==================== ATTENDANCE ====================
+function initAttendance() {
+  const cls = document.getElementById('attClass');
+  cls.innerHTML = '<option value="">Select Class</option>';
+  getAllClasses().forEach(c => { cls.innerHTML += `<option value="${esc(c)}">${escHtml(c)}</option>`; });
+  document.getElementById('attDate').value = new Date().toISOString().split('T')[0];
+}
+
+function loadAttendance() {
+  const cls = document.getElementById('attClass').value;
+  const date = document.getElementById('attDate').value;
+  if (!cls || !date) { document.getElementById('attendanceContent').innerHTML = ''; return; }
+
+  const clsStudents = students.filter(s => s.class === cls);
+  if (clsStudents.length === 0) {
+    document.getElementById('attendanceContent').innerHTML = '<p style="color:var(--text-light)">No students in this class</p>';
+    return;
+  }
+
+  let html = '<table><tr><th>Name</th><th>ID</th><th>Status</th></tr>';
+  clsStudents.forEach(s => {
+    const status = s.attendance[date] || 'present';
+    const sIdx = students.indexOf(s);
+    html += `<tr>
+      <td>${escHtml(s.name)}</td><td>${escHtml(s.id)}</td>
+      <td><select class="att-status" data-idx="${sIdx}">
+        <option value="present" ${status==='present'?'selected':''}>✅ Present</option>
+        <option value="absent" ${status==='absent'?'selected':''}>❌ Absent</option>
+        <option value="late" ${status==='late'?'selected':''}>⏰ Late</option>
+        <option value="excused" ${status==='excused'?'selected':''}>📝 Excused</option>
+      </select></td>
+    </tr>`;
+  });
+  html += '</table>';
+  document.getElementById('attendanceContent').innerHTML = html;
+}
+
+function saveAttendance() {
+  const cls = document.getElementById('attClass').value;
+  const date = document.getElementById('attDate').value;
+  if (!cls || !date) return showToast('Select class and date','error');
+
+  requestApproval('Save attendance for ' + cls + ' on ' + date, () => {
+    pushUndo();
+    document.querySelectorAll('.att-status').forEach(el => {
+      const idx = parseInt(el.dataset.idx);
+      students[idx].attendance[date] = el.value;
+    });
+    saveStudents();
+    showToast('Attendance saved');
+  });
+}
+
+// ==================== CONDUCT ====================
+function initConduct() {
+  const sel = document.getElementById('conductStudent');
+  sel.innerHTML = '<option value="">Select Student</option>';
+  students.forEach((s, i) => { sel.innerHTML += `<option value="${i}">${escHtml(s.name)} (${escHtml(s.id)})</option>`; });
+  document.getElementById('conductDate').value = new Date().toISOString().split('T')[0];
+}
+
+function loadConduct() {
+  const idx = document.getElementById('conductStudent').value;
+  if (idx === '') { document.getElementById('conductList').innerHTML = ''; return; }
+  const s = students[idx];
+  let rows = s.conduct.map(c => `<tr><td>${escHtml(c.type)}</td><td>${escHtml(c.date)}</td><td>${escHtml(c.description)}</td></tr>`).join('');
+  document.getElementById('conductList').innerHTML = `<div class="table-wrap"><table><tr><th>Type</th><th>Date</th><th>Description</th></tr>${rows || '<tr><td colspan="3" style="text-align:center;color:var(--text-light)">No records</td></tr>'}</table></div>`;
+}
+
+function saveConduct() {
+  const idx = document.getElementById('conductStudent').value;
+  if (idx === '') return showToast('Select a student','error');
+  const type = document.getElementById('conductType').value;
+  const date = document.getElementById('conductDate').value;
+  const desc = document.getElementById('conductDesc').value.trim();
+  if (!desc) return showToast('Enter a description','error');
+
+  requestApproval('Log ' + type + ' for ' + students[idx].name, () => {
+    pushUndo();
+    students[idx].conduct.push({ type, date, description: desc });
+    saveStudents();
+    document.getElementById('conductDesc').value = '';
+    loadConduct();
+    showToast('Conduct recorded');
+  });
+}
+
+// ==================== ANALYTICS ====================
+function renderAnalytics() {
+  const total = students.length;
+  const male = students.filter(s => s.sex === 'Male').length;
+  const female = students.filter(s => s.sex === 'Female').length;
+
+  document.getElementById('analyticsStats').innerHTML = `
+    <div class="stat-card"><div class="stat-value">${total}</div><div class="stat-label">Total Students</div></div>
+    <div class="stat-card" style="border-left-color:#2E86C1"><div class="stat-value">${male}</div><div class="stat-label">Male</div></div>
+    <div class="stat-card" style="border-left-color:#E74C3C"><div class="stat-value">${female}</div><div class="stat-label">Female</div></div>
+    <div class="stat-card" style="border-left-color:var(--success)"><div class="stat-value">K${students.reduce((s,st) => s+(st.finance?.paid||0),0).toLocaleString()}</div><div class="stat-label">Total Collected</div></div>`;
+
+  // Grade distribution (simple bar chart with CSS)
+  let gradeDist = '';
+  const gradeCounts = { A:0, B:0, C:0, D:0, F:0 };
+  students.forEach(s => {
+    if (s.subjects.length === 0) return;
+    const avg = s.subjects.reduce((sum, sub) => sum + calcWeightedTotal(sub), 0) / s.subjects.length;
+    gradeCounts[getLetterGrade(avg)]++;
+  });
+  const maxCount = Math.max(...Object.values(gradeCounts), 1);
+  const colors = { A:'#27AE60', B:'#2E86C1', C:'#F39C12', D:'#E67E22', F:'#E74C3C' };
+  Object.entries(gradeCounts).forEach(([g, c]) => {
+    const pct = (c / maxCount * 100).toFixed(0);
+    gradeDist += `<div style="display:flex;align-items:center;gap:8px;margin:4px 0">
+      <span style="width:20px;font-weight:700;color:${colors[g]}">${g}</span>
+      <div style="flex:1;background:var(--border);border-radius:4px;height:24px;overflow:hidden">
+        <div style="width:${pct}%;background:${colors[g]};height:100%;border-radius:4px;transition:width 0.5s"></div>
+      </div>
+      <span style="width:30px;text-align:right">${c}</span>
+    </div>`;
+  });
+  document.getElementById('gradeDistChart').innerHTML = gradeDist;
+
+  // Fee chart
+  const totalFee = students.reduce((s,st) => s+(st.finance?.total||0), 0);
+  const totalPaid = students.reduce((s,st) => s+(st.finance?.paid||0), 0);
+  const paidPct = totalFee > 0 ? (totalPaid/totalFee*100).toFixed(0) : 0;
+  document.getElementById('feeChart').innerHTML = `
+    <div style="display:flex;align-items:center;gap:8px;margin:4px 0">
+      <span style="width:60px">Paid</span>
+      <div style="flex:1;background:var(--border);border-radius:4px;height:24px;overflow:hidden">
+        <div style="width:${paidPct}%;background:var(--success);height:100%;border-radius:4px"></div>
+      </div>
+      <span>K${totalPaid.toLocaleString()} (${paidPct}%)</span>
+    </div>
+    <div style="display:flex;align-items:center;gap:8px;margin:4px 0">
+      <span style="width:60px">Owing</span>
+      <div style="flex:1;background:var(--border);border-radius:4px;height:24px;overflow:hidden">
+        <div style="width:${100-paidPct}%;background:var(--accent);height:100%;border-radius:4px"></div>
+      </div>
+      <span>K${(totalFee-totalPaid).toLocaleString()}</span>
+    </div>`;
+
+  // Attendance overview
+  const today = new Date().toISOString().split('T')[0];
+  const presentCount = students.filter(s => s.attendance[today] === 'present').length;
+  const absentCount = students.filter(s => s.attendance[today] === 'absent').length;
+  document.getElementById('attChart').innerHTML = `
+    <p>Today's Attendance: <strong>${presentCount}</strong> present, <strong>${absentCount}</strong> absent out of ${total} students</p>
+    <div style="display:flex;align-items:center;gap:8px;margin:4px 0">
+      <span style="width:60px">Present</span>
+      <div style="flex:1;background:var(--border);border-radius:4px;height:24px;overflow:hidden">
+        <div style="width:${total>0?(presentCount/total*100).toFixed(0):0}%;background:var(--success);height:100%;border-radius:4px"></div>
+      </div>
+      <span>${presentCount}</span>
+    </div>`;
+}
+
+// ==================== ANNOUNCEMENTS ====================
+function renderAnnouncements() {
+  let html = alerts.map((a, i) => `<div class="card"><div style="display:flex;justify-content:space-between;align-items:flex-start">
+    <div><strong>${escHtml(a.title||'Announcement')}</strong><br>${escHtml(a.text||'')}</div>
+    <button class="btn btn-danger btn-sm" onclick="deleteAnnouncement(${i})">✕</button>
+  </div></div>`).join('');
+  document.getElementById('announcementList').innerHTML = html || '<div class="card" style="color:var(--text-light);text-align:center">No announcements yet</div>';
+}
+
+function saveAnnouncement() {
+  const text = document.getElementById('annText').value.trim();
+  if (!text) return showToast('Enter announcement text','error');
+
+  requestApproval('Post announcement', () => {
+    pushUndo();
+    alerts.push({ title: 'Announcement', text, date: new Date().toISOString() });
+    config.activeAnnouncement = text;
+    saveAlerts(); saveConfig();
+    document.getElementById('annText').value = '';
+    renderAnnouncements();
+    showToast('Announcement posted');
+  });
+}
+
+function deleteAnnouncement(idx) {
+  alerts.splice(idx, 1);
+  if (alerts.length === 0) config.activeAnnouncement = '';
+  else config.activeAnnouncement = alerts[alerts.length - 1].text;
+  saveAlerts(); saveConfig();
+  renderAnnouncements();
+}
+
+// ==================== REPORTS ====================
+function initReports() {
+  const sel = document.getElementById('reportStudent');
+  sel.innerHTML = '<option value="">Select Student</option>';
+  students.forEach((s, i) => { sel.innerHTML += `<option value="${i}">${escHtml(s.name)} (${escHtml(s.id)})</option>`; });
+}
+
+function loadReportPreview() {
+  const idx = document.getElementById('reportStudent').value;
+  if (idx === '') { document.getElementById('reportPreview').innerHTML = ''; return; }
+  const s = students[idx];
+  document.getElementById('reportPreview').innerHTML = `<div style="color:var(--text-light)">Report will be generated for: <strong>${escHtml(s.name)}</strong> (${escHtml(s.class)})</div>`;
+}
+
+function generateReport() {
+  const idx = document.getElementById('reportStudent').value;
+  const type = document.getElementById('reportType').value;
+  const pin = document.getElementById('reportPin').value.trim();
+
+  if (idx === '') return showToast('Select a student','error');
+  if (pin !== config.masterPin && pin !== config.headTeacherPin) return showToast('Incorrect authorization PIN','error');
+
+  const s = students[idx];
+  let report = '';
+
+  if (type === 'academic') {
+    report = `ACADEMIC REPORT\n${'='.repeat(40)}\nSchool: ${config.schoolName}\nStudent: ${s.name}\nID: ${s.id}\nSex: ${s.sex}\nClass: ${s.class}\nTerm: ${config.currentTerm} ${config.academicYear}\n\n`;
+    s.subjects.forEach(sub => {
+      const tot = calcWeightedTotal(sub);
+      report += `${sub.name}: CA1=${sub.ca1||'-'}, CA2=${sub.ca2||'-'}, Final=${sub.final||'-'}, Total=${tot.toFixed(1)}, Grade=${getLetterGrade(tot)}\n`;
+    });
+    const avg = s.subjects.length > 0 ? (s.subjects.reduce((sum, sub) => sum + calcWeightedTotal(sub), 0) / s.subjects.length).toFixed(1) : 'N/A';
+    report += `\nOverall Average: ${avg}%\nGrade: ${avg !== 'N/A' ? getLetterGrade(parseFloat(avg)) : 'N/A'}`;
+  } else if (type === 'finance') {
+    report = `FINANCIAL STATEMENT\n${'='.repeat(40)}\nStudent: ${s.name}\nID: ${s.id}\nClass: ${s.class}\n\n`;
+    if (s.finance.categories) {
+      s.finance.categories.forEach(c => { report += `${c.name}: K${c.amount.toLocaleString()}\n`; });
+    }
+    report += `\nTotal Fee: K${s.finance.total.toLocaleString()}\nPaid: K${s.finance.paid.toLocaleString()}\nBalance: K${(s.finance.total-s.finance.paid).toLocaleString()}`;
+  } else if (type === 'whatsapp') {
+    const wa = getWhatsAppPhone(s);
+    const avg = s.subjects.length > 0 ? (s.subjects.reduce((sum, sub) => sum + calcWeightedTotal(sub), 0) / s.subjects.length).toFixed(1) : 'N/A';
+    report = `📊 *${config.schoolName} Report*\n👤 ${s.name} (${s.sex})\n🆔 ${s.id}\n🏫 ${s.class}\n📱 WhatsApp: ${wa}\n\n`;
+    s.subjects.forEach(sub => {
+      const tot = calcWeightedTotal(sub);
+      report += `📚 ${sub.name}: ${tot.toFixed(1)}% (${getLetterGrade(tot)})\n`;
+    });
+    report += `\n📈 Average: ${avg}%\n💰 Fee Balance: K${(s.finance.total-s.finance.paid).toLocaleString()}`;
+  }
+
+  // Show report in a modal-like div
+  document.getElementById('reportPreview').innerHTML = `<div style="background:var(--bg);padding:16px;border-radius:8px;border:1px solid var(--border);white-space:pre-wrap;font-family:monospace;font-size:13px;max-height:400px;overflow-y:auto">${escHtml(report)}</div>
+    <div style="margin-top:8px;display:flex;gap:8px">
+      <button class="btn btn-info btn-sm" onclick="copyReport()">📋 Copy</button>
+      <button class="btn btn-success btn-sm" onclick="downloadReport()">📥 Download</button>
+    </div>`;
+  document.getElementById('reportPreview').dataset.reportText = report;
+  document.getElementById('reportPin').value = '';
+}
+
+function copyReport() {
+  const text = document.getElementById('reportPreview').dataset.reportText || '';
+  navigator.clipboard.writeText(text).then(() => showToast('Report copied'));
+}
+
+function downloadReport() {
+  const text = document.getElementById('reportPreview').dataset.reportText || '';
+  const blob = new Blob([text], { type: 'text/plain' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'report.txt';
+  a.click();
+}
+
+// ==================== ADMIN SETTINGS ====================
+function renderAdmin() {
+  document.getElementById('adminAppPin').value = config.appPin;
+  document.getElementById('adminHeadPin').value = config.headTeacherPin;
+  document.getElementById('adminMasterPin').value = config.masterPin;
+  document.getElementById('adminRequireApproval').checked = config.requireApproval;
+  document.getElementById('adminWCA1').value = config.weight_ca1;
+  document.getElementById('adminWCA2').value = config.weight_ca2;
+  document.getElementById('adminWFinal').value = config.weight_final;
+  document.getElementById('adminGradeA').value = config.gradeA;
+  document.getElementById('adminGradeB').value = config.gradeB;
+  document.getElementById('adminGradeC').value = config.gradeC;
+  document.getElementById('adminGradeD').value = config.gradeD;
+  document.getElementById('adminPassMark').value = config.passMark;
+  document.getElementById('adminTerm').value = config.currentTerm;
+  document.getElementById('adminYear').value = config.academicYear;
+
+  renderGradesManager();
+  renderFeeStructure();
+  renderTeachers();
+  renderSchools();
+}
+
+function savePins() {
+  const masterPin = document.getElementById('adminMasterPin').value.trim();
+  if (!masterPin) return showToast('Master PIN required','error');
+  config.appPin = document.getElementById('adminAppPin').value.trim() || config.appPin;
+  config.headTeacherPin = document.getElementById('adminHeadPin').value.trim() || config.headTeacherPin;
+  config.masterPin = masterPin;
+  saveConfig();
+  showToast('PINs saved');
+}
+
+// Approval toggle
+document.getElementById('adminRequireApproval')?.addEventListener('change', function() {
+  config.requireApproval = this.checked;
+  saveConfig();
+  showToast(config.requireApproval ? 'Approval required' : 'Approval disabled');
+});
+
+function saveWeighting() {
+  config.weight_ca1 = parseInt(document.getElementById('adminWCA1').value) || 20;
+  config.weight_ca2 = parseInt(document.getElementById('adminWCA2').value) || 20;
+  config.weight_final = parseInt(document.getElementById('adminWFinal').value) || 60;
+  saveConfig();
+  showToast('Weighting saved');
+}
+
+function saveThresholds() {
+  config.gradeA = parseInt(document.getElementById('adminGradeA').value) || 80;
+  config.gradeB = parseInt(document.getElementById('adminGradeB').value) || 65;
+  config.gradeC = parseInt(document.getElementById('adminGradeC').value) || 50;
+  config.gradeD = parseInt(document.getElementById('adminGradeD').value) || 40;
+  config.passMark = parseInt(document.getElementById('adminPassMark').value) || 50;
+  saveConfig();
+  showToast('Thresholds saved');
+}
+
+function saveTermYear() {
+  config.currentTerm = document.getElementById('adminTerm').value.trim() || 'Term 1';
+  config.academicYear = document.getElementById('adminYear').value.trim() || '2025';
+  saveConfig();
+  showToast('Term & year saved');
+}
+
+// ==================== GRADES & SUBJECTS MANAGER ====================
+function renderGradesManager() {
+  let html = '';
+  config.grades.forEach((g, gi) => {
+    html += `<div class="card" style="margin-bottom:8px">
+      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
+        <div style="display:flex;align-items:center;gap:8px">
+          <strong style="font-size:16px;color:var(--primary)">${escHtml(g.name)}</strong>
+          <button class="btn btn-outline btn-sm" onclick="toggleGradeExpand(${gi})" id="gradeExpBtn-${gi}">▼ Expand</button>
+        </div>
+        <button class="btn btn-danger btn-sm" onclick="removeGrade(${gi})">Remove Grade</button>
+      </div>
+      <div id="gradeExp-${gi}" style="display:none;margin-top:12px">
+        <div style="margin-bottom:12px">
+          <label style="font-weight:600;margin-bottom:4px;display:block">Sub-grades</label>
+          <div id="subGrades-${gi}">
+            ${g.subGrades.map((sg, sgi) => `<span style="display:inline-flex;align-items:center;gap:2px;background:var(--primary-light);color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;margin:2px">${escHtml(sg)} <button onclick="removeSubGrade(${gi},${sgi})" style="background:none;color:#fff;font-size:14px;padding:0 2px">✕</button></span>`).join('')}
+          </div>
+          <div style="display:flex;gap:4px;margin-top:4px">
+            <input type="text" id="newSubGrade-${gi}" placeholder="e.g. 7D" style="width:80px">
+            <button class="btn btn-outline btn-sm" onclick="addSubGrade(${gi})">+ Add</button>
+          </div>
+        </div>
+        <div>
+          <label style="font-weight:600;margin-bottom:4px;display:block">Subjects</label>
+          <div id="gradeSubjects-${gi}">
+            ${g.subjects.map((sub, si) => `<span style="display:inline-flex;align-items:center;gap:2px;background:var(--info-light);color:var(--text);padding:2px 8px;border-radius:12px;font-size:12px;margin:2px">${escHtml(sub)} <button onclick="removeGradeSubject(${gi},${si})" style="background:none;color:var(--accent);font-size:14px;padding:0 2px">✕</button></span>`).join('')}
+          </div>
+          <div style="display:flex;gap:4px;margin-top:4px;flex-wrap:wrap;align-items:center">
+            <select id="addSubjectSelect-${gi}" style="width:160px">
+              <option value="">Select or type new</option>
+              ${['Mathematics','English','Science','Social Studies','Creative Arts','ICT','Geography','History','Physics','Chemistry','Biology','Agriculture','Commerce','Accounting','Business Studies','Religious Education','Physical Education','Music','Art','French','Computer Science'].map(s => `<option value="${esc(s)}">${escHtml(s)}</option>`).join('')}
+            </select>
+            <input type="text" id="newSubjectText-${gi}" placeholder="Or type custom subject" style="width:150px">
+            <button class="btn btn-outline btn-sm" onclick="addGradeSubject(${gi})">+ Add Subject</button>
+          </div>
+        </div>
+      </div>
+    </div>`;
+  });
+
+  if (config.grades.length === 0) {
+    html = '<div style="color:var(--text-light);text-align:center;padding:20px">No grades configured. Click "Add Grade" to start.</div>';
+  }
+
+  document.getElementById('gradesManager').innerHTML = html;
+}
+
+function toggleGradeExpand(gi) {
+  const el = document.getElementById('gradeExp-' + gi);
+  const btn = document.getElementById('gradeExpBtn-' + gi);
+  if (el.style.display === 'none') {
+    el.style.display = 'block';
+    btn.textContent = '▲ Collapse';
+  } else {
+    el.style.display = 'none';
+    btn.textContent = '▼ Expand';
+  }
+}
+
+function addGrade() {
+  const name = prompt('Enter grade name (e.g. Grade 10):');
+  if (!name) return;
+  config.grades.push({ name: name.trim(), subGrades: [], subjects: ['Mathematics','English','Science'] });
+  saveConfig();
+  renderGradesManager();
+}
+
+function removeGrade(gi) {
+  if (!confirm('Remove grade ' + config.grades[gi].name + '?')) return;
+  config.grades.splice(gi, 1);
+  saveConfig();
+  renderGradesManager();
+}
+
+function addSubGrade(gi) {
+  const input = document.getElementById('newSubGrade-' + gi);
+  const val = input.value.trim();
+  if (!val) return;
+  config.grades[gi].subGrades.push(val);
+  saveConfig();
+  renderGradesManager();
+}
+
+function removeSubGrade(gi, sgi) {
+  config.grades[gi].subGrades.splice(sgi, 1);
+  saveConfig();
+  renderGradesManager();
+}
+
+function addGradeSubject(gi) {
+  const selectVal = document.getElementById('addSubjectSelect-' + gi).value;
+  const textVal = document.getElementById('newSubjectText-' + gi).value.trim();
+  const subject = textVal || selectVal;
+  if (!subject) return showToast('Select or type a subject name','error');
+  if (config.grades[gi].subjects.includes(subject)) return showToast('Subject already exists','error');
+  config.grades[gi].subjects.push(subject);
+  saveConfig();
+  renderGradesManager();
+}
+
+function removeGradeSubject(gi, si) {
+  config.grades[gi].subjects.splice(si, 1);
+  saveConfig();
+  renderGradesManager();
+}
+
+// ==================== FEE STRUCTURE ====================
+function renderFeeStructure() {
+  const cats = config.feeStructure.categories || [];
+  let totalDefault = cats.reduce((s, c) => s + (parseFloat(c.amount) || 0), 0);
+
+  let html = `<div style="margin-bottom:16px">
+    <strong>Default Fee Categories</strong>
+    <table class="fee-table" style="margin-top:8px">
+      <tr><th>Category</th><th>Amount</th><th></th></tr>
+      ${cats.map((c, ci) => `<tr>
+        <td><input type="text" value="${esc(c.name)}" onchange="updateFeeCat(${ci},'name',this.value)" style="width:100%"></td>
+        <td><input type="number" value="${c.amount}" onchange="updateFeeCat(${ci},'amount',this.value)" style="width:100px;text-align:right"></td>
+        <td><button class="btn btn-danger btn-sm" onclick="removeFeeCat(${ci})">✕</button></td>
+      </tr>`).join('')}
+      <tr><td colspan="2" style="text-align:right;font-weight:700">Total: K${totalDefault.toLocaleString()}</td><td></td></tr>
+    </table>
+    <div style="display:flex;gap:4px;margin-top:8px">
+      <input type="text" id="newFeeCatName" placeholder="Category name" style="width:160px">
+      <input type="number" id="newFeeCatAmount" placeholder="Amount" style="width:100px">
+      <button class="btn btn-primary btn-sm" onclick="addFeeCat()">+ Add Category</button>
+    </div>
+  </div>`;
+
+  // Per-class overrides
+  html += `<div style="margin-top:16px">
+    <strong>Per-Class Fee Overrides</strong>
+    <div style="margin-top:8px">
+      <select id="feeOverrideClass" style="width:200px">
+        <option value="">Select Class</option>
+        ${getAllClasses().map(c => `<option value="${esc(c)}">${escHtml(c)}</option>`).join('')}
+      </select>
+      <button class="btn btn-outline btn-sm" onclick="editClassFeeOverride()">Edit Class Fees</button>
+    </div>`;
+
+  // Show existing overrides
+  const overrides = config.feeStructure.perClass || {};
+  const overrideNames = Object.keys(overrides);
+  if (overrideNames.length > 0) {
+    html += '<div style="margin-top:8px">';
+    overrideNames.forEach(cls => {
+      const pcCats = overrides[cls].categories || [];
+      const pcTotal = pcCats.reduce((s, c) => s + (parseFloat(c.amount) || 0), 0);
+      html += `<div style="display:flex;align-items:center;gap:8px;margin:2px 0">
+        <span class="badge badge-wa">${escHtml(cls)}</span>
+        <span>K${pcTotal.toLocaleString()}</span>
+        <button class="btn btn-danger btn-sm" onclick="removeClassFeeOverride('${esc(cls)}')" style="padding:2px 6px">✕</button>
+      </div>`;
+    });
+    html += '</div>';
+  }
+
+  html += '</div>';
+
+  document.getElementById('feeStructureManager').innerHTML = html;
+}
+
+function addFeeCat() {
+  const name = document.getElementById('newFeeCatName').value.trim();
+  const amount = parseFloat(document.getElementById('newFeeCatAmount').value) || 0;
+  if (!name) return showToast('Enter category name','error');
+  config.feeStructure.categories.push({ name, amount });
+  saveConfig();
+  renderFeeStructure();
+}
+
+function removeFeeCat(ci) {
+  config.feeStructure.categories.splice(ci, 1);
+  saveConfig();
+  renderFeeStructure();
+}
+
+function updateFeeCat(ci, field, value) {
+  if (field === 'amount') config.feeStructure.categories[ci].amount = parseFloat(value) || 0;
+  else config.feeStructure.categories[ci][field] = value;
+  saveConfig();
+  renderFeeStructure();
+}
+
+function editClassFeeOverride() {
+  const cls = document.getElementById('feeOverrideClass').value;
+  if (!cls) return showToast('Select a class','error');
+  if (!config.feeStructure.perClass) config.feeStructure.perClass = {};
+  if (!config.feeStructure.perClass[cls]) {
+    // Copy default categories
+    config.feeStructure.perClass[cls] = {
+      categories: config.feeStructure.categories.map(c => ({ ...c }))
+    };
+  }
+  saveConfig();
+  // Show edit modal for class fees
+  const pcCats = config.feeStructure.perClass[cls].categories;
+  let modalHtml = `<h3>Fee Override: ${escHtml(cls)}</h3>`;
+  pcCats.forEach((c, ci) => {
+    modalHtml += `<div style="display:flex;gap:8px;align-items:center;margin:4px 0">
+      <input type="text" value="${esc(c.name)}" id="pcCatName-${ci}" style="flex:1">
+      <input type="number" value="${c.amount}" id="pcCatAmount-${ci}" style="width:100px">
+    </div>`;
+  });
+  modalHtml += `<div class="modal-actions">
+    <button class="btn btn-outline" onclick="document.getElementById('classFeeModal').remove()">Cancel</button>
+    <button class="btn btn-primary" onclick="saveClassFeeOverride('${esc(cls)}')">Save</button>
+  </div>`;
+
+  const overlay = document.createElement('div');
+  overlay.className = 'modal-overlay';
+  overlay.id = 'classFeeModal';
+  overlay.innerHTML = `<div class="modal">${modalHtml}</div>`;
+  document.body.appendChild(overlay);
+}
+
+function saveClassFeeOverride(cls) {
+  const pcCats = config.feeStructure.perClass[cls].categories;
+  pcCats.forEach((c, ci) => {
+    const nameEl = document.getElementById('pcCatName-' + ci);
+    const amtEl = document.getElementById('pcCatAmount-' + ci);
+    if (nameEl) c.name = nameEl.value.trim();
+    if (amtEl) c.amount = parseFloat(amtEl.value) || 0;
+  });
+  saveConfig();
+  document.getElementById('classFeeModal').remove();
+  renderFeeStructure();
+  showToast('Class fee override saved');
+}
+
+function removeClassFeeOverride(cls) {
+  delete config.feeStructure.perClass[cls];
+  saveConfig();
+  renderFeeStructure();
+}
+
+// ==================== TEACHERS ====================
+function renderTeachers() {
+  let html = '';
+  (config.teachers || []).forEach((t, ti) => {
+    html += `<div style="display:flex;gap:8px;align-items:center;margin:4px 0;flex-wrap:wrap">
+      <input type="text" value="${esc(t.name)}" onchange="config.teachers[${ti}].name=this.value;saveConfig()" placeholder="Name" style="width:150px">
+      <select onchange="config.teachers[${ti}].class=this.value;saveConfig()" style="width:150px">
+        <option value="">No class</option>
+        ${getAllClasses().map(c => `<option value="${esc(c)}" ${t.class===c?'selected':''}>${escHtml(c)}</option>`).join('')}
+      </select>
+      <input type="password" value="${esc(t.pin)}" onchange="config.teachers[${ti}].pin=this.value;saveConfig()" placeholder="PIN" style="width:80px" maxlength="6">
+      <button class="btn btn-danger btn-sm" onclick="config.teachers.splice(${ti},1);saveConfig();renderTeachers()">✕</button>
+    </div>`;
+  });
+  document.getElementById('teachersList').innerHTML = html || '<div style="color:var(--text-light)">No teachers added</div>';
+}
+
+function addTeacher() {
+  if (!config.teachers) config.teachers = [];
+  config.teachers.push({ name: '', class: '', pin: '' });
+  saveConfig();
+  renderTeachers();
+}
+
+// ==================== SCHOOLS ====================
+function renderSchools() {
+  let html = '';
+  const schoolKeys = Object.keys(config.schools || {});
+  schoolKeys.forEach(key => {
+    html += `<div style="display:flex;gap:8px;align-items:center;margin:4px 0">
+      <input type="text" value="${esc(config.schools[key])}" onchange="config.schools['${key}']=this.value;saveConfig()" style="width:200px">
+      ${key === config.currentSchool ? '<span class="badge badge-wa">Active</span>' : `<button class="btn btn-outline btn-sm" onclick="switchSchool('${key}')">Switch</button>`}
+      ${key !== 'default' ? `<button class="btn btn-danger btn-sm" onclick="deleteSchool('${key}')">✕</button>` : ''}
+    </div>`;
+  });
+  document.getElementById('schoolsList').innerHTML = html;
+}
+
+function addSchool() {
+  const name = prompt('Enter school name:');
+  if (!name) return;
+  const key = 'school_' + Date.now();
+  config.schools[key] = name.trim();
+  saveConfig();
+  renderSchools();
+}
+
+function switchSchool(key) {
+  config.currentSchool = key;
+  saveConfig();
+  // Reload students for this school (in a real app, each school has its own data)
+  showToast('Switched to ' + config.schools[key]);
+  document.getElementById('sidebarSchoolName').textContent = config.schools[key];
+}
+
+function deleteSchool(key) {
+  if (!confirm('Delete school ' + config.schools[key] + '?')) return;
+  delete config.schools[key];
+  if (config.currentSchool === key) config.currentSchool = 'default';
+  saveConfig();
+  renderSchools();
+}
+
+// ==================== DATA MANAGEMENT ====================
+function exportData() {
+  const data = { config, students, alerts, exportDate: new Date().toISOString(), version: 21 };
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'edugenius_backup_' + new Date().toISOString().split('T')[0] + '.json';
+  a.click();
+  showToast('Data exported');
+}
+
+function importData(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      const data = JSON.parse(e.target.result);
+      if (data.config) {
+        config = data.config;
+        if (!config.grades) config.grades = getDefaultConfig().grades;
+        if (!config.feeStructure) config.feeStructure = getDefaultConfig().feeStructure;
+        if (config.requireApproval === undefined) config.requireApproval = true;
+      }
+      if (data.students) students = data.students.map(s => migrateStudent(s));
+      if (data.alerts) alerts = data.alerts;
+      saveConfig(); saveStudents(); saveAlerts();
+      showToast('Data imported successfully');
+      refreshCurrentSection();
+    } catch(err) {
+      showToast('Invalid import file','error');
+    }
+  };
+  reader.readAsText(file);
+  event.target.value = '';
+}
+
+function clearAllData() {
+  if (!confirm('Are you sure you want to delete ALL data? This cannot be undone.')) return;
+  if (!confirm('REALLY delete everything?')) return;
+  requestApproval('Clear ALL data', () => {
+    localStorage.removeItem(CONFIG_KEY);
+    localStorage.removeItem(DB_KEY);
+    localStorage.removeItem(UNDO_KEY);
+    localStorage.removeItem(ALERTS_KEY);
+    students = []; undoStack = []; redoStack = []; alerts = [];
+    config = getDefaultConfig();
+    saveConfig(); saveStudents(); saveAlerts(); saveUndoData();
+    showToast('All data cleared');
+    showLockScreen();
+    document.getElementById('appContainer').style.display = 'none';
+    showSetupWizard();
+  });
+}
+
+// ==================== ESCAPING ====================
+function esc(str) { return String(str||'').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/'/g,'&#39;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function escHtml(str) { return String(str||'').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/'/g,'&#39;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+// ==================== KEYBOARD SHORTCUTS ====================
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Enter') {
+    if (document.getElementById('lockScreen').style.display === 'flex') attemptUnlock();
+    if (document.getElementById('approvalDialog').style.display === 'flex') confirmApproval();
+  }
+  if (e.ctrlKey && e.key === 'z') { e.preventDefault(); undoLastAction(); }
+  if (e.ctrlKey && e.key === 'y') { e.preventDefault(); redoLastAction(); }
+});
+
+// ==================== INITIALIZATION ====================
+function init() {
+  loadData();
+
+  if (!config.isSetup) {
+    showSetupWizard();
+    return;
+  }
+
+  showLockScreen();
+}
+
+init();
+</script>
+</body>
+</html>
