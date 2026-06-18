@@ -146,6 +146,11 @@ input:focus,select:focus,textarea:focus { border-color:var(--primary); }
 .lp-auth-box input,.lp-auth-box select { width:100%; }
 .lp-auth-switch { text-align:center; margin-top:16px; font-size:13px; color:var(--text-light); }
 .lp-auth-switch a { color:var(--primary); font-weight:600; cursor:pointer; text-decoration:none; }
+.lp-btn-google { background:#fff; color:#3c4043; border:1px solid #dadce0; font-weight:600; display:inline-flex; align-items:center; justify-content:center; gap:10px; width:100%; padding:11px; border-radius:7px; cursor:pointer; font-size:14px; transition:box-shadow 0.2s; margin-top:10px; }
+.lp-btn-google:hover { box-shadow:0 2px 8px rgba(0,0,0,0.18); }
+.lp-btn-google svg { flex-shrink:0; }
+.lp-auth-divider { display:flex; align-items:center; gap:10px; margin:14px 0; color:var(--text-light); font-size:12px; }
+.lp-auth-divider::before,.lp-auth-divider::after { content:''; flex:1; height:1px; background:var(--border); }
 .lp-auth-close { position:absolute; top:14px; right:18px; font-size:22px; color:var(--text-light); cursor:pointer; background:none; border:none; line-height:1; }
 .lp-auth-box-wrap { position:relative; }
 
@@ -404,7 +409,12 @@ tr:hover td { background:rgba(108,52,131,0.04); }
       <input id="lpLoginEmail" type="email" placeholder="admin@yourschool.com">
       <label>Password</label>
       <input id="lpLoginPass" type="password" placeholder="Password">
-      <button class="lp-btn lp-btn-gold lp-btn-block" style="margin-top:16px" onclick="loginFromLanding()">Log In</button>
+      <button id="lpLoginBtn" class="lp-btn lp-btn-gold lp-btn-block" style="margin-top:16px" onclick="loginFromLanding()">Log In</button>
+      <div class="lp-auth-divider">or</div>
+      <button id="lpGoogleLoginBtn" class="lp-btn-google" onclick="googleSignIn()">
+        <svg width="18" height="18" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.08 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.18 1.48-4.97 2.31-8.16 2.31-6.26 0-11.57-3.59-13.46-8.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/><path fill="none" d="M0 0h48v48H0z"/></svg>
+        Continue with Google
+      </button>
       <div class="lp-auth-switch">New school? <a onclick="switchLandingAuth('signup')">Sign up instead</a></div>
     </div>
   </div>
@@ -425,7 +435,14 @@ tr:hover td { background:rgba(108,52,131,0.04); }
       <input id="lpAdminUser" placeholder="Choose a username">
       <label>Admin Password</label>
       <input id="lpAdminPass" type="password" placeholder="Choose a password (min 6 chars)">
-      <button class="lp-btn lp-btn-gold lp-btn-block" style="margin-top:16px" onclick="signupFromLanding()">Create School Account</button>
+      <label>Confirm Password</label>
+      <input id="lpAdminPassConfirm" type="password" placeholder="Re-enter password">
+      <button id="lpSignupBtn" class="lp-btn lp-btn-gold lp-btn-block" style="margin-top:16px" onclick="signupFromLanding()">Create School Account</button>
+      <div class="lp-auth-divider">or</div>
+      <button id="lpGoogleSignupBtn" class="lp-btn-google" onclick="googleSignIn()">
+        <svg width="18" height="18" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.08 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.18 1.48-4.97 2.31-8.16 2.31-6.26 0-11.57-3.59-13.46-8.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/><path fill="none" d="M0 0h48v48H0z"/></svg>
+        Sign up with Google
+      </button>
       <div class="lp-auth-switch">Already set up? <a onclick="switchLandingAuth('login')">Log in instead</a></div>
     </div>
   </div>
@@ -819,8 +836,8 @@ tr:hover td { background:rgba(108,52,131,0.04); }
 <!-- ==================== FIREBASE SDK ==================== -->
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-app.js";
-  import { getDatabase, ref, set, onValue, get } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-database.js";
-  import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-auth.js";
+  import { getDatabase, ref, set, update, onValue, get } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-database.js";
+  import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged, GoogleAuthProvider, signInWithPopup } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-auth.js";
 
   const firebaseConfig = {
     apiKey: "AIzaSyDjCuVE0G5zkQQd0itOmXujj8Jy7m6gPAU",
@@ -840,16 +857,26 @@ tr:hover td { background:rgba(108,52,131,0.04); }
   window._fbDb   = db;
   window._fbAuth = auth;
   window._fbRef  = ref;
-  window._fbSet  = set;
+  window._fbSet    = set;
+  window._fbUpdate = update;
   window._fbOnValue = onValue;
-  window._fbGet  = get;
-  window._fbCreateUser = (email, pass) => createUserWithEmailAndPassword(auth, email, pass);
-  window._fbSignIn     = (email, pass) => signInWithEmailAndPassword(auth, email, pass);
-  window._fbSignOut    = ()            => signOut(auth);
-  window._fbOnAuthStateChanged = (cb)  => onAuthStateChanged(auth, cb);
+  window._fbGet    = get;
+  window._fbCreateUser   = (email, pass) => createUserWithEmailAndPassword(auth, email, pass);
+  window._fbSignIn       = (email, pass) => signInWithEmailAndPassword(auth, email, pass);
+  window._fbSignOut      = ()            => signOut(auth);
+  window._fbOnAuthStateChanged = (cb)    => onAuthStateChanged(auth, cb);
+  window._fbGoogleSignIn = () => {
+    const provider = new GoogleAuthProvider();
+    provider.setCustomParameters({ prompt: 'select_account' });
+    return signInWithPopup(auth, provider);
+  };
   window._fbReady = true;
 
-  // Dispatch event so the main script knows Firebase is ready
+  // Use a stored promise so any listener that registers AFTER the module loads
+  // still gets resolved immediately — avoids the race condition with dispatchEvent.
+  if (window._fbReadyResolve) {
+    window._fbReadyResolve();
+  }
   window.dispatchEvent(new Event('firebaseReady'));
 </script>
 
@@ -889,6 +916,9 @@ let regPhotoData = null;
 let _fbSyncEnabled = false;       // true once Firebase is confirmed ready
 let _fbListenersAttached = false; // prevent duplicate onValue listeners
 let _fbSyncPending = 0;           // count of in-flight writes
+let _fbRetryQueue = [];           // [{path,data}] -- writes queued for retry
+let _fbRetryTimer = null;
+let _fbConnected = false;         // real-time .info/connected state
 
 // ==================== DEFAULT CONFIG ====================
 function getDefaultConfig() {
@@ -925,36 +955,77 @@ function getDefaultConfig() {
 
 // ==================== DATA PERSISTENCE ====================
 
-// --- Internal helpers ---
+// ==================== FIREBASE WRITE ENGINE ====================
+// _fbWrite: immediate write with exponential-backoff retry (3 attempts),
+// then offline queue. Queued writes are flushed when connectivity returns.
+
 function _fbWrite(path, data) {
   if (!_fbSyncEnabled || !window._fbDb) return;
   _fbSyncPending++;
   _fbUpdateSyncBadge('syncing');
-  const r = window._fbRef(window._fbDb, path);
-  window._fbSet(r, data)
+  _doWrite(path, data, 0);
+}
+
+function _doWrite(path, data, attempt) {
+  window._fbSet(window._fbRef(window._fbDb, path), data)
     .then(() => {
       _fbSyncPending = Math.max(0, _fbSyncPending - 1);
-      if (_fbSyncPending === 0) _fbUpdateSyncBadge('live');
+      if (_fbSyncPending === 0) _fbUpdateSyncBadge(_fbConnected ? 'live' : 'offline');
     })
     .catch(err => {
       _fbSyncPending = Math.max(0, _fbSyncPending - 1);
-      _fbUpdateSyncBadge('error');
-      console.error('Firebase write error:', err);
+      const code = err.code || err.message || '';
+      console.warn('FB write failed (attempt ' + (attempt+1) + '):', code);
+      if (attempt < 2) {
+        // Exponential backoff: 1.5s, 3s
+        setTimeout(() => _doWrite(path, data, attempt + 1), 1500 * Math.pow(2, attempt));
+      } else {
+        // Deduplicate queue by path — newest write wins
+        _fbRetryQueue = _fbRetryQueue.filter(q => q.path !== path);
+        _fbRetryQueue.push({ path, data });
+        _fbUpdateSyncBadge('queued');
+        _scheduleRetryFlush();
+      }
     });
 }
 
-// ==================== FIREBASE PATH HELPERS (Step 7) ====================
+// Flush the retry queue once connection is confirmed
+function _flushRetryQueue() {
+  if (!_fbConnected || !_fbRetryQueue.length) return;
+  const batch = _fbRetryQueue.slice();
+  _fbRetryQueue = [];
+  batch.forEach(item => _fbWrite(item.path, item.data));
+}
+
+function _scheduleRetryFlush() {
+  if (_fbRetryTimer) return;
+  _fbRetryTimer = setTimeout(() => { _fbRetryTimer = null; _flushRetryQueue(); }, 8000);
+}
+
+// Real-time connection state via Firebase's .info/connected node
+function _attachConnectionListener() {
+  if (!window._fbDb || !window._fbOnValue || !window._fbRef) return;
+  window._fbOnValue(window._fbRef(window._fbDb, '.info/connected'), snap => {
+    const wasConnected = _fbConnected;
+    _fbConnected = !!snap.val();
+    if (_fbConnected) {
+      _fbUpdateSyncBadge(_fbSyncPending > 0 ? 'syncing' : 'live');
+      if (!wasConnected && _fbRetryQueue.length) _flushRetryQueue();
+    } else {
+      _fbUpdateSyncBadge('offline');
+    }
+  });
+}
+
+// ==================== FIREBASE PATH HELPERS ====================
 function _fbSchoolPath() {
-  // Use the authenticated Firebase UID as the schoolId — globally unique, unforgeable
   const uid = (window._fbAuth && window._fbAuth.currentUser) ? window._fbAuth.currentUser.uid : null;
   if (uid) return 'schools/' + uid;
-  // Fallback to config.currentSchool while auth is still loading
   const schoolId = (config && config.currentSchool) ? config.currentSchool : 'default';
   return 'schools/' + schoolId;
 }
 
 function _fbDetachListeners() {
-  // Re-flag so next attachFirebaseListeners() re-registers for new school path
   _fbListenersAttached = false;
 }
 
@@ -962,14 +1033,16 @@ function _fbUpdateSyncBadge(state) {
   const badge = document.getElementById('fbSyncBadge');
   if (!badge) return;
   const states = {
-    live:     { icon: '🟢', text: 'Synced',   color: '#27AE60' },
-    syncing:  { icon: '🟡', text: 'Syncing…', color: '#F39C12' },
-    offline:  { icon: '🔴', text: 'Offline',  color: '#E74C3C' },
-    error:    { icon: '🔴', text: 'Sync error',color: '#E74C3C' },
-    disabled: { icon: '⚪', text: 'Local only',color: '#7F8C8D' }
+    live:    { icon: '🟢', text: 'Synced',      color: '#27AE60' },
+    syncing: { icon: '🟡', text: 'Syncing…', color: '#F39C12' },
+    queued:  { icon: '🟠', text: 'Queued',       color: '#E67E22' },
+    offline: { icon: '🔴', text: 'Offline',      color: '#E74C3C' },
+    error:   { icon: '🔴', text: 'Sync error',   color: '#E74C3C' },
+    disabled:{ icon: '⚪', text: 'Local only', color: '#7F8C8D' }
   };
   const s = states[state] || states.disabled;
-  badge.innerHTML = `${s.icon} <span style="color:${s.color}">${s.text}</span>`;
+  badge.innerHTML = s.icon + ' <span style="color:' + s.color + '">' + s.text + '</span>';
+  badge.title = _fbRetryQueue.length ? _fbRetryQueue.length + ' write(s) queued for retry' : '';
 }
 
 // --- Public save functions (localStorage + Firebase mirror) ---
@@ -986,20 +1059,42 @@ function saveConfig() {
   } catch(e) { showToast('Storage error','error'); }
 }
 
-function saveStudents() {
+// Track last-synced student count to detect deletions
+let _fbLastStudentCount = -1;
+
+function saveStudents(changedIdx) {
+  // changedIdx (optional): index of the single student that changed.
+  // When provided, only that student's node is patched — much leaner than
+  // a full array rewrite. Metadata (_count, _lastModified) is always updated.
   try {
     localStorage.setItem(DB_KEY, JSON.stringify(students));
-    // Convert array to object keyed by index for RTDB
-    const studentsObj = {};
-    students.forEach((s, i) => {
-      // Strip large base64 photos to keep writes lean
-      const lean = Object.assign({}, s);
+    if (!_fbSyncEnabled || !window._fbDb) return;
+
+    const basePath = _fbSchoolPath() + '/students';
+    const ts = Date.now();
+
+    const countChanged = (_fbLastStudentCount !== -1 && students.length !== _fbLastStudentCount);
+    _fbLastStudentCount = students.length;
+
+    if (changedIdx !== undefined && changedIdx >= 0 && !countChanged) {
+      // Patch only the changed student + metadata
+      const lean = Object.assign({}, students[changedIdx]);
       if (lean.photo && lean.photo.length > 500) lean.photo = '__photo__';
-      studentsObj['s' + i] = lean;
-    });
-    studentsObj._count = students.length;
-    studentsObj._lastModified = Date.now();
-    _fbWrite(_fbSchoolPath() + '/students', studentsObj);
+      _fbWrite(basePath + '/s' + changedIdx, lean);
+      _fbWrite(basePath + '/_count', students.length);
+      _fbWrite(basePath + '/_lastModified', ts);
+    } else {
+      // Full write when count changed (add/delete) or no specific index given
+      const studentsObj = {};
+      students.forEach((s, i) => {
+        const lean = Object.assign({}, s);
+        if (lean.photo && lean.photo.length > 500) lean.photo = '__photo__';
+        studentsObj['s' + i] = lean;
+      });
+      studentsObj._count = students.length;
+      studentsObj._lastModified = ts;
+      _fbWrite(basePath, studentsObj);
+    }
   } catch(e) { showToast('Storage error','error'); }
 }
 
@@ -1074,30 +1169,33 @@ function attachFirebaseListeners() {
 // Bootstrap Firebase when SDK signals ready
 window.addEventListener('firebaseReady', () => {
   _fbSyncEnabled = true;
-  // Gate all sync on Firebase Auth — only attach listeners once a user is signed in
+  // Start real-time connection listener immediately (works before auth)
+  _attachConnectionListener();
+
   window._fbOnAuthStateChanged(user => {
     if (user) {
-      // Signed in — store uid in config so _fbSchoolPath() works immediately
       if (config) config._fbUid = user.uid;
       _fbDetachListeners();
       attachFirebaseListeners();
       if (typeof _attachUsersListener === 'function') _attachUsersListener();
-      // Seed Firebase with local config on first connect
+      // Seed / refresh Firebase with local config on first connect
       const safeCfg = Object.assign({}, config);
       delete safeCfg.appPin; delete safeCfg.headTeacherPin; delete safeCfg.masterPin;
       safeCfg._lastModified = Date.now();
       _fbWrite(_fbSchoolPath() + '/config', safeCfg);
+      // Flush anything queued while signed out
+      _flushRetryQueue();
     } else {
-      // Signed out — stop syncing
       _fbDetachListeners();
       _fbUpdateSyncBadge('disabled');
     }
   });
 });
 
-// Detect online/offline for badge
-window.addEventListener('online',  () => { if (_fbSyncEnabled) _fbUpdateSyncBadge('live');    });
-window.addEventListener('offline', () => _fbUpdateSyncBadge('offline'));
+// window online/offline are secondary signals — .info/connected is authoritative,
+// but these handle cases where the Firebase listener hasn't fired yet.
+window.addEventListener('online',  () => { if (_fbSyncEnabled && !_fbConnected) _flushRetryQueue(); });
+window.addEventListener('offline', () => { _fbConnected = false; _fbUpdateSyncBadge('offline'); });
 
 // ==================== MIGRATION from v20 ====================
 function migrateV20() {
@@ -3034,57 +3132,87 @@ function switchLandingAuth(mode){
   openLandingAuth(mode);
 }
 
+// Returns a promise that resolves once Firebase SDK is ready.
+// If it's already ready, resolves immediately.
+function _waitForFirebase() {
+  if (window._fbReady) return Promise.resolve();
+  return new Promise(resolve => {
+    // Store resolver so the module script can call it
+    window._fbReadyResolve = resolve;
+    // Also listen for the event in case it fires after this runs
+    window.addEventListener('firebaseReady', resolve, { once: true });
+  });
+}
+
+function _setAuthBtn(id, loading, label) {
+  const btn = document.getElementById(id);
+  if (!btn) return;
+  btn.disabled = loading;
+  btn.textContent = loading ? 'Please wait…' : label;
+}
+
 async function loginFromLanding(){
   const email = document.getElementById('lpLoginEmail').value.trim();
   const p     = document.getElementById('lpLoginPass').value;
   if(!email){ showToast('Enter your email address','error'); return; }
   if(!p){ showToast('Enter your password','error'); return; }
 
-  // 1. Authenticate with Firebase
-  if(!window._fbSignIn){ showToast('Firebase not ready, try again','error'); return; }
+  _setAuthBtn('lpLoginBtn', true, 'Log In');
   try {
-    await window._fbSignIn(email, p);
-  } catch(err) {
-    const msg = err.code === 'auth/invalid-credential' || err.code === 'auth/wrong-password'
-      ? 'Invalid email or password'
-      : err.message;
-    showToast(msg, 'error');
-    return;
+    // 1. Wait for Firebase SDK then sign in
+    await _waitForFirebase();
+    try {
+      await window._fbSignIn(email, p);
+    } catch(err) {
+      const msg = (err.code === 'auth/invalid-credential' || err.code === 'auth/wrong-password' || err.code === 'auth/user-not-found')
+        ? 'Invalid email or password'
+        : (err.code === 'auth/too-many-requests' ? 'Too many attempts. Try again later.' : err.message);
+      showToast(msg, 'error');
+      return;
+    }
+
+    // 2. Look up local user record by email
+    const users = JSON.parse(localStorage.getItem('eduGenius_users_v1') || '[]');
+    const candidate = users.find(x => (x.email || '').toLowerCase() === email.toLowerCase());
+
+    if(!candidate){
+      // New device — no local record yet. Accept Firebase auth and bootstrap minimal record.
+      const fbUser = window._fbAuth.currentUser;
+      const bootstrapUser = { username: email.split('@')[0], email: email, role: 'Super Admin' };
+      users.push(bootstrapUser);
+      localStorage.setItem('eduGenius_users_v1', JSON.stringify(users));
+      window.eduUsers = users;
+      sessionStorage.setItem('eduUser', JSON.stringify({ username: bootstrapUser.username, role: bootstrapUser.role }));
+      currentUser = { username: bootstrapUser.username, role: bootstrapUser.role };
+      closeLandingAuth('login');
+      hideLandingPage();
+      showSetupWizard();
+      return;
+    }
+
+    // 3. Verify password against local hash
+    const passwordOk = await verifyPassword(candidate, p);
+    if(!passwordOk){
+      await window._fbSignOut();
+      showToast('Invalid email or password','error');
+      return;
+    }
+    // Silently upgrade legacy hash to PBKDF2
+    await _upgradeHashIfNeeded(candidate, p, users);
+
+    const match = { username: candidate.username, role: candidate.role };
+    sessionStorage.setItem('eduUser', JSON.stringify(match));
+    currentUser = { username: match.username, role: match.role };
+
+    closeLandingAuth('login');
+    hideLandingPage();
+
+    if(!config.isSetup){ showSetupWizard(); return; }
+    showApp();
+    if(typeof applyRoleAccess === 'function') applyRoleAccess(match.role);
+  } finally {
+    _setAuthBtn('lpLoginBtn', false, 'Log In');
   }
-
-  // 2. Look up the user record by email — role is resolved automatically
-  const users = JSON.parse(localStorage.getItem('eduGenius_users_v1') || '[]');
-  const candidate = users.find(x => (x.email || '').toLowerCase() === email.toLowerCase());
-
-  if(!candidate){
-    await window._fbSignOut();
-    showToast('No user found for this email on this device','error');
-    return;
-  }
-
-  // Upgrade legacy plaintext password records
-  if(candidate.password && !candidate.passwordHash){
-    const rec = await makePasswordRecord(candidate.password);
-    candidate.passwordHash = rec.passwordHash;
-    candidate.salt = rec.salt;
-    delete candidate.password;
-    if(typeof _saveUsers === 'function') _saveUsers(users);
-    else localStorage.setItem('eduGenius_users_v1', JSON.stringify(users));
-  }
-
-  const match = { username: candidate.username, role: candidate.role };
-  sessionStorage.setItem('eduUser', JSON.stringify(match));
-  currentUser = { username: match.username, role: match.role };
-
-  closeLandingAuth('login');
-  hideLandingPage();
-
-  if(!config.isSetup){
-    showSetupWizard();
-    return;
-  }
-  showApp();
-  if(typeof applyRoleAccess === 'function') applyRoleAccess(match.role);
 }
 
 async function signupFromLanding(){
@@ -3092,73 +3220,175 @@ async function signupFromLanding(){
   const adminEmail = document.getElementById('lpAdminEmail').value.trim();
   const adminUser  = document.getElementById('lpAdminUser').value.trim();
   const adminPass  = document.getElementById('lpAdminPass').value;
+  const adminPassConfirm = (document.getElementById('lpAdminPassConfirm') || {}).value || '';
 
   if(!schoolName){ showToast('Enter your school name','error'); return; }
   if(!adminEmail || !adminEmail.includes('@')){ showToast('Enter a valid email address','error'); return; }
   if(!adminUser){ showToast('Choose an admin username','error'); return; }
   if(!adminPass || adminPass.length < 6){ showToast('Password must be at least 6 characters','error'); return; }
+  if(document.getElementById('lpAdminPassConfirm') && adminPass !== adminPassConfirm){
+    showToast('Passwords do not match','error'); return;
+  }
 
-  // Block duplicate admin usernames on this device
   const existingUsers = JSON.parse(localStorage.getItem('eduGenius_users_v1') || '[]');
   if(existingUsers.find(x => x.username.trim().toLowerCase() === adminUser.toLowerCase())){
-    showToast('That username is already taken','error');
-    return;
+    showToast('That username is already taken','error'); return;
   }
 
-  // 1. Create Firebase Auth account
-  if(!window._fbCreateUser){
-    showToast('Firebase not ready, try again','error'); return;
-  }
-  let fbUser;
+  _setAuthBtn('lpSignupBtn', true, 'Create School Account');
   try {
-    const cred = await window._fbCreateUser(adminEmail, adminPass);
-    fbUser = cred.user;
-  } catch(err) {
-    const msg = err.code === 'auth/email-already-in-use'
-      ? 'That email is already registered to a school'
-      : err.message;
-    showToast(msg, 'error');
-    return;
-  }
-
-  // 2. Set up school config — PINs default to 0000, admin prompted to change on first login
-  config.isSetup = true;
-  config.schoolName = schoolName;
-  config.appPin = '0000';
-  config.headTeacherPin = '0000';
-  config.masterPin = '0000';
-  config._pinsNotSet = true; // flag to trigger prompt after login
-  config.currentSchool = fbUser.uid;
-  config.schools = { [fbUser.uid]: schoolName };
-  saveConfig();
-
-  // 3. Seed Super Admin user record
-  const { passwordHash, salt } = await makePasswordRecord(adminPass);
-  const newUsers = existingUsers.concat([{ username: adminUser, passwordHash, salt, role: 'Super Admin', email: adminEmail }]);
-  if(typeof _saveUsers === 'function'){
-    _saveUsers(newUsers);
-  } else {
-    localStorage.setItem('eduGenius_users_v1', JSON.stringify(newUsers));
-    window.eduUsers = newUsers;
-  }
-  if(typeof addAudit === 'function') addAudit('School created, admin user added: ' + adminUser);
-
-  sessionStorage.setItem('eduUser', JSON.stringify({ username: adminUser, role: 'Super Admin' }));
-  currentUser = { username: adminUser, role: 'Super Admin' };
-
-  closeLandingAuth('signup');
-  hideLandingPage();
-  showApp();
-  showToast('Welcome to School Pro! Please set your PINs under Admin → Settings.');
-
-  // Prompt to set PINs immediately
-  setTimeout(() => {
-    if(config._pinsNotSet){
-      if(confirm('Your App, Head Teacher, and Master PINs are currently set to 0000.\n\nGo to Admin → Settings now to change them?')){
-        showSection('admin');
-      }
+    // 1. Wait for Firebase SDK then create account
+    await _waitForFirebase();
+    let fbUser;
+    try {
+      const cred = await window._fbCreateUser(adminEmail, adminPass);
+      fbUser = cred.user;
+    } catch(err) {
+      const msg = err.code === 'auth/email-already-in-use'
+        ? 'That email is already registered to a school'
+        : (err.code === 'auth/weak-password' ? 'Password too weak (min 6 chars)' : err.message);
+      showToast(msg, 'error');
+      return;
     }
-  }, 1200);
+
+    // 2. Set up school config
+    config.isSetup = true;
+    config.schoolName = schoolName;
+    config.appPin = '0000';
+    config.headTeacherPin = '0000';
+    config.masterPin = '0000';
+    config._pinsNotSet = true;
+    config.currentSchool = fbUser.uid;
+    config.schools = { [fbUser.uid]: schoolName };
+    saveConfig();
+
+    // 3. Seed Super Admin user record with PBKDF2 hash
+    const { passwordHash, salt, kdf } = await makePasswordRecord(adminPass);
+    const newUsers = existingUsers.concat([{ username: adminUser, passwordHash, salt, kdf, role: 'Super Admin', email: adminEmail }]);
+    if(typeof _saveUsers === 'function'){
+      _saveUsers(newUsers);
+    } else {
+      localStorage.setItem('eduGenius_users_v1', JSON.stringify(newUsers));
+      window.eduUsers = newUsers;
+    }
+    if(typeof addAudit === 'function') addAudit('School created, admin user added: ' + adminUser);
+
+    sessionStorage.setItem('eduUser', JSON.stringify({ username: adminUser, role: 'Super Admin' }));
+    currentUser = { username: adminUser, role: 'Super Admin' };
+
+    closeLandingAuth('signup');
+    hideLandingPage();
+    showApp();
+    showToast('Welcome to School Pro! Please set your PINs under Admin → Settings.');
+
+    setTimeout(() => {
+      if(config._pinsNotSet){
+        if(confirm('Your App, Head Teacher, and Master PINs are currently set to 0000.\n\nGo to Admin → Settings now to change them?')){
+          showSection('admin');
+        }
+      }
+    }, 1200);
+  } finally {
+    _setAuthBtn('lpSignupBtn', false, 'Create School Account');
+  }
+}
+
+// ==================== GOOGLE SIGN-IN ====================
+async function googleSignIn() {
+  // Disable both Google buttons while working
+  ['lpGoogleLoginBtn','lpGoogleSignupBtn'].forEach(id => {
+    const b = document.getElementById(id);
+    if (b) { b.disabled = true; b.style.opacity = '0.6'; }
+  });
+  try {
+    await _waitForFirebase();
+    let result;
+    try {
+      result = await window._fbGoogleSignIn();
+    } catch(err) {
+      const msg =
+        err.code === 'auth/popup-closed-by-user'    ? 'Sign-in cancelled.' :
+        err.code === 'auth/popup-blocked'            ? 'Popup blocked — allow popups for this page.' :
+        err.code === 'auth/configuration-not-found'  ? 'Google sign-in not configured yet in Firebase console.' :
+        err.message;
+      showToast(msg, 'error');
+      return;
+    }
+
+    const fbUser = result.user;
+    const email  = fbUser.email;
+    const displayName = fbUser.displayName || email.split('@')[0];
+
+    // Check if user already exists locally
+    const users = JSON.parse(localStorage.getItem('eduGenius_users_v1') || '[]');
+    let candidate = users.find(x => (x.email || '').toLowerCase() === email.toLowerCase());
+
+    if (candidate) {
+      // Existing user — log straight in
+      const match = { username: candidate.username, role: candidate.role };
+      sessionStorage.setItem('eduUser', JSON.stringify(match));
+      currentUser = { username: match.username, role: match.role };
+      closeLandingAuth('login');
+      closeLandingAuth('signup');
+      hideLandingPage();
+      if (!config.isSetup) { showSetupWizard(); return; }
+      showApp();
+      if (typeof applyRoleAccess === 'function') applyRoleAccess(match.role);
+      showToast('Welcome back, ' + match.username + '!');
+    } else {
+      // New Google user — need school name to complete setup
+      const schoolName = prompt('Welcome, ' + displayName + '!\n\nEnter your school name to complete setup:');
+      if (!schoolName || !schoolName.trim()) {
+        await window._fbSignOut();
+        showToast('School name required to complete setup.', 'error');
+        return;
+      }
+
+      // Seed config
+      config.isSetup = true;
+      config.schoolName = schoolName.trim();
+      config.appPin = '0000';
+      config.headTeacherPin = '0000';
+      config.masterPin = '0000';
+      config._pinsNotSet = true;
+      config.currentSchool = fbUser.uid;
+      config.schools = { [fbUser.uid]: schoolName.trim() };
+      saveConfig();
+
+      // Add user record (no password hash needed — Google handles auth)
+      const newUser = { username: displayName, email: email, role: 'Super Admin', googleAuth: true };
+      users.push(newUser);
+      if (typeof _saveUsers === 'function') {
+        _saveUsers(users);
+      } else {
+        localStorage.setItem('eduGenius_users_v1', JSON.stringify(users));
+        window.eduUsers = users;
+      }
+      if (typeof addAudit === 'function') addAudit('School created via Google: ' + displayName);
+
+      sessionStorage.setItem('eduUser', JSON.stringify({ username: displayName, role: 'Super Admin' }));
+      currentUser = { username: displayName, role: 'Super Admin' };
+
+      closeLandingAuth('login');
+      closeLandingAuth('signup');
+      hideLandingPage();
+      showApp();
+      showToast('Welcome to School Pro, ' + displayName + '! Set your PINs under Admin → Settings.');
+
+      setTimeout(() => {
+        if (config._pinsNotSet) {
+          if (confirm('Your PINs are set to 0000.\n\nGo to Admin → Settings now to change them?')) {
+            showSection('admin');
+          }
+        }
+      }, 1200);
+    }
+  } finally {
+    ['lpGoogleLoginBtn','lpGoogleSignupBtn'].forEach(id => {
+      const b = document.getElementById(id);
+      if (b) { b.disabled = false; b.style.opacity = '1'; }
+    });
+  }
 }
 
 // ==================== INITIALIZATION ====================
@@ -3175,47 +3405,87 @@ init();
 const USER_KEY='eduGenius_users_v1';
 let currentUser={username:'admin',role:'Super Admin'};
 
-// ==================== PASSWORD HASHING ====================
-// Passwords are never stored in plaintext. Each user record stores
-// {passwordHash, salt} instead of {password}. Hashing uses the browser's
-// built-in SHA-256 (crypto.subtle), so no external library is needed and
-// it works fully offline.
+// ==================== PASSWORD HASHING (PBKDF2) ====================
+// Passwords are hashed with PBKDF2-SHA-256 (100,000 iterations + 32-byte salt).
+// PBKDF2 is orders of magnitude slower to brute-force than a raw SHA-256 hash,
+// making offline dictionary attacks infeasible on stolen localStorage data.
+// All crypto uses the browser's built-in crypto.subtle — no external library,
+// works fully offline.
+const PBKDF2_ITERATIONS = 100000;
+const PBKDF2_HASH = 'SHA-256';
+const PBKDF2_KEY_LEN = 32; // bytes → 64 hex chars
+
 function generateSalt(){
-  const bytes = new Uint8Array(16);
+  const bytes = new Uint8Array(32); // 256-bit salt
   crypto.getRandomValues(bytes);
   return Array.from(bytes).map(b=>b.toString(16).padStart(2,'0')).join('');
 }
 
-async function hashPassword(password, salt){
-  const enc = new TextEncoder().encode(salt + ':' + password);
-  const digest = await crypto.subtle.digest('SHA-256', enc);
-  return Array.from(new Uint8Array(digest)).map(b=>b.toString(16).padStart(2,'0')).join('');
+// Hex-decode a salt string back to Uint8Array
+function _saltBytes(saltHex){
+  const arr = new Uint8Array(saltHex.length / 2);
+  for(let i=0;i<arr.length;i++) arr[i] = parseInt(saltHex.slice(i*2,i*2+2),16);
+  return arr;
 }
 
-// Builds a {passwordHash, salt} pair for a new/changed password.
+async function hashPassword(password, saltHex){
+  const enc = new TextEncoder();
+  const keyMaterial = await crypto.subtle.importKey(
+    'raw', enc.encode(password), { name:'PBKDF2' }, false, ['deriveBits']
+  );
+  const bits = await crypto.subtle.deriveBits(
+    { name:'PBKDF2', salt: _saltBytes(saltHex), iterations: PBKDF2_ITERATIONS, hash: PBKDF2_HASH },
+    keyMaterial, PBKDF2_KEY_LEN * 8
+  );
+  return Array.from(new Uint8Array(bits)).map(b=>b.toString(16).padStart(2,'0')).join('');
+}
+
+// Builds a {passwordHash, salt, kdf} record for a new/changed password.
 async function makePasswordRecord(plainPassword){
   const salt = generateSalt();
   const passwordHash = await hashPassword(plainPassword, salt);
-  return { passwordHash, salt };
+  return { passwordHash, salt, kdf: 'pbkdf2-sha256-100k' };
 }
 
-// Checks a plaintext password attempt against a stored user record.
-// Supports legacy records that still have a plaintext `password` field
-// (pre-hashing installs) by upgrading them to hashed form on successful login.
+// Verifies a plaintext attempt against a stored user record.
+// Handles three cases:
+//   1. PBKDF2 record (kdf field present) — full PBKDF2 verify
+//   2. Legacy SHA-256 record (no kdf field, has passwordHash+salt) — verify then upgrade
+//   3. Plaintext legacy record — verify then upgrade
 async function verifyPassword(user, attemptPassword){
-  if(user.passwordHash && user.salt){
+  // Case 1: PBKDF2
+  if(user.kdf === 'pbkdf2-sha256-100k' && user.passwordHash && user.salt){
     const attemptHash = await hashPassword(attemptPassword, user.salt);
     return attemptHash === user.passwordHash;
   }
-  // Legacy plaintext fallback
+  // Case 2: legacy SHA-256 (no kdf tag)
+  if(!user.kdf && user.passwordHash && user.salt){
+    const enc = new TextEncoder().encode(user.salt + ':' + attemptPassword);
+    const digest = await crypto.subtle.digest('SHA-256', enc);
+    const legacyHash = Array.from(new Uint8Array(digest)).map(b=>b.toString(16).padStart(2,'0')).join('');
+    return legacyHash === user.passwordHash;
+  }
+  // Case 3: plaintext
   return user.password === attemptPassword;
+}
+
+// Called after a successful legacy login to silently upgrade the stored record to PBKDF2.
+async function _upgradeHashIfNeeded(user, plainPassword, users){
+  if(user.kdf === 'pbkdf2-sha256-100k') return; // already strong
+  const rec = await makePasswordRecord(plainPassword);
+  user.passwordHash = rec.passwordHash;
+  user.salt = rec.salt;
+  user.kdf = rec.kdf;
+  delete user.password; // remove plaintext if present
+  if(typeof _saveUsers === 'function') _saveUsers(users);
+  else localStorage.setItem('eduGenius_users_v1', JSON.stringify(users));
 }
 
 function loadUsers(){
  if(!localStorage.getItem(USER_KEY)){
-   // Default demo accounts. Passwords below are pre-hashed (not plaintext) —
-   // the literal passwords are admin123 / head123 / teacher123 / bursar123,
-   // hashed with the fixed salt 'eg-default-seed-v1' for reproducibility.
+   // Default demo accounts — passwords: admin123 / head123 / teacher123 / bursar123.
+   // Stored as legacy SHA-256 records (no kdf tag); they will be silently upgraded
+   // to PBKDF2 on first successful login via _upgradeHashIfNeeded().
    const defaults=[
     {username:'admin',passwordHash:'50f97ae909cb31e000effc0cb4626e5e61d560eb158da6ee826ab237b8acec96',salt:'eg-default-seed-v1',role:'Super Admin'},
     {username:'head',passwordHash:'f9a15b335c4ea17188dc79057d5c566196064e53fcb15ab9e16eee40f0bf50eb',salt:'eg-default-seed-v1',role:'Head Teacher'},
@@ -3337,15 +3607,10 @@ async function loginEdu(){
  let u=document.getElementById('loginUser').value.trim();
  let p=document.getElementById('loginPass').value;
  let r=document.getElementById('loginRole').value;
- let ok=window.eduUsers.find(x=>x.username.trim().toLowerCase()===u.toLowerCase()&&x.role===r);
+ let users=window.eduUsers;
+ let ok=users.find(x=>x.username.trim().toLowerCase()===u.toLowerCase()&&x.role===r);
  if(ok && await verifyPassword(ok, p)){
-   if(ok.password && !ok.passwordHash){
-     const rec = await makePasswordRecord(ok.password);
-     ok.passwordHash = rec.passwordHash;
-     ok.salt = rec.salt;
-     delete ok.password;
-     if(typeof _saveUsers === 'function') _saveUsers(window.eduUsers);
-   }
+   await _upgradeHashIfNeeded(ok, p, users);
    sessionStorage.setItem('eduUser',JSON.stringify({username:ok.username,role:ok.role}));
    document.getElementById('authLogin').style.display='none';
  } else alert('Invalid username, password, or role.');
