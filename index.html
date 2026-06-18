@@ -3413,7 +3413,6 @@ function switchLandingAuth(mode){
 // If it's already ready, resolves immediately.
 function _waitForFirebase() {
   if (window._fbReady) return Promise.resolve();
-  // Use a shared promise so multiple callers don't race on _fbReadyResolve
   if (!window._fbReadyPromise) {
     window._fbReadyPromise = new Promise((resolve, reject) => {
       const timer = setTimeout(() => reject(new Error('Firebase SDK timeout')), 10000);
@@ -3441,11 +3440,8 @@ async function loginFromLanding(){
   _setAuthBtn('lpLoginBtn', true, 'Log In');
   try {
     // 1. Wait for Firebase SDK then sign in
-    try {
-      await _waitForFirebase();
-    } catch(e) {
-      showToast('Cannot reach server — check your connection and try again.', 'error');
-      return;
+    try { await _waitForFirebase(); } catch(e) {
+      showToast('Cannot reach server — check your connection.', 'error'); return;
     }
     try {
       await window._fbSignIn(email, p);
@@ -3458,12 +3454,13 @@ async function loginFromLanding(){
     }
 
     // 2. Look up local user record by email
-    const users = JSON.parse(localStorage.getItem('eduGenius_users_v1') || '[]');
+    const usersRaw = localStorage.getItem('eduGenius_users_v1');
+    const users = JSON.parse(usersRaw || '[]');
     const candidate = users.find(x => (x.email || '').toLowerCase() === email.toLowerCase());
 
     if(!candidate){
-      // New device — no local record yet. Accept Firebase auth and bootstrap minimal record.
-      const fbUser = window._fbAuth.currentUser;
+      // No local record — Firebase accepted the credentials so we trust them.
+      // Bootstrap a minimal record so the user can get in, then load their data.
       const bootstrapUser = { username: email.split('@')[0], email: email, role: 'Super Admin' };
       users.push(bootstrapUser);
       localStorage.setItem('eduGenius_users_v1', JSON.stringify(users));
@@ -3472,7 +3469,9 @@ async function loginFromLanding(){
       currentUser = { username: bootstrapUser.username, role: bootstrapUser.role };
       closeLandingAuth('login');
       hideLandingPage();
-      showSetupWizard();
+      // If school is already set up (returning user on new device), go straight to app
+      if(config.isSetup){ showApp(); if(typeof applyRoleAccess === 'function') applyRoleAccess(bootstrapUser.role); }
+      else showSetupWizard();
       return;
     }
 
@@ -3519,7 +3518,7 @@ async function signupFromLanding(){
   try {
     // 1. Wait for Firebase SDK then create account
     try { await _waitForFirebase(); } catch(e) {
-      showToast('Cannot reach server — check your connection and try again.', 'error'); return;
+      showToast('Cannot reach server — check your connection.', 'error'); return;
     }
     let fbUser;
     try {
@@ -3653,7 +3652,7 @@ async function googleSignIn() {
   });
   try {
     try { await _waitForFirebase(); } catch(e) {
-      showToast('Cannot reach server — check your connection and try again.', 'error'); return;
+      showToast('Cannot reach server — check your connection.', 'error'); return;
     }
     let result;
     try {
