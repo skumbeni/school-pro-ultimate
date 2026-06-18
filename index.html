@@ -3,6 +3,38 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<!--
+  V12 — Content Security Policy
+  ─────────────────────────────────────────────────────────────────────────────
+  'unsafe-inline' is required for script-src and style-src because the app
+  currently uses 123+ inline onclick/onchange handlers and <style> blocks.
+  This still provides meaningful protection:
+    • Blocks all externally-injected <script src="..."> from unknown origins
+    • Blocks <object>, <embed>, <base> hijacking
+    • Restricts fetch/XHR/WebSocket to known Firebase + Google endpoints
+    • Blocks framing (clickjacking)
+    • Restricts form submissions to 'none'
+
+  To harden further in a future refactor:
+    • Move all inline handlers to addEventListener() calls
+    • Replace 'unsafe-inline' with a per-request nonce or 'strict-dynamic'
+  ─────────────────────────────────────────────────────────────────────────────
+-->
+<meta http-equiv="Content-Security-Policy" content="
+  default-src 'self';
+  script-src  'self' 'unsafe-inline' https://www.gstatic.com;
+  style-src   'self' 'unsafe-inline' https://fonts.googleapis.com;
+  font-src    'self' https://fonts.gstatic.com;
+  img-src     'self' data:;
+  connect-src 'self'
+              https://*.googleapis.com
+              https://*.firebaseio.com
+              wss://*.firebaseio.com;
+  frame-src   'none';
+  object-src  'none';
+  base-uri    'self';
+  form-action 'none';
+">
 <title>School Pro Ultimate</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -700,12 +732,22 @@ tr:hover td { background:rgba(108,52,131,0.04); }
         <!-- PINs -->
         <div class="card">
           <div class="card-header"><span class="card-title">🔐 PIN Management</span></div>
-          <div class="form-row">
-            <div class="form-group"><label>App PIN</label><input type="password" id="adminAppPin" maxlength="6"></div>
-            <div class="form-group"><label>Head Teacher PIN</label><input type="password" id="adminHeadPin" maxlength="6"></div>
-            <div class="form-group"><label>Master PIN</label><input type="password" id="adminMasterPin" maxlength="6"></div>
+          <div class="form-group" style="margin-bottom:10px">
+            <label>Current Master PIN (required to change PINs)</label>
+            <div style="display:flex;gap:8px;align-items:center">
+              <input type="password" id="adminCurrentMasterPin" maxlength="6" placeholder="Enter current Master PIN" style="max-width:200px">
+              <button class="btn btn-outline btn-sm" onclick="unlockPinForm()">Unlock</button>
+            </div>
+            <div id="pinUnlockError" style="color:#E74C3C;font-size:12px;margin-top:4px"></div>
           </div>
-          <button class="btn btn-primary btn-sm" onclick="savePins()">Save PINs</button>
+          <div id="pinChangeForm" style="display:none">
+            <div class="form-row">
+              <div class="form-group"><label>New App PIN</label><input type="password" id="adminAppPin" maxlength="6" placeholder="Leave blank to keep"></div>
+              <div class="form-group"><label>New Head Teacher PIN</label><input type="password" id="adminHeadPin" maxlength="6" placeholder="Leave blank to keep"></div>
+              <div class="form-group"><label>New Master PIN</label><input type="password" id="adminMasterPin" maxlength="6" placeholder="Leave blank to keep"></div>
+            </div>
+            <button class="btn btn-primary btn-sm" onclick="savePins()">Save PINs</button>
+          </div>
         </div>
 
         <!-- Approval Toggle -->
@@ -714,6 +756,22 @@ tr:hover td { background:rgba(108,52,131,0.04); }
           <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
             <input type="checkbox" id="adminRequireApproval" checked> Require PIN approval before saving
           </label>
+        </div>
+
+        <!-- Idle Auto-Lock -->
+        <div class="card">
+          <div class="card-header"><span class="card-title">⏱️ Idle Auto-Lock</span></div>
+          <div class="form-group">
+            <label>Lock screen after inactivity</label>
+            <select id="adminIdleTimeout" onchange="saveIdleTimeout()">
+              <option value="0">Never (not recommended)</option>
+              <option value="60000">1 minute</option>
+              <option value="300000" selected>5 minutes</option>
+              <option value="600000">10 minutes</option>
+              <option value="1800000">30 minutes</option>
+            </select>
+          </div>
+          <p style="font-size:12px;color:var(--text-light);margin:0">Auto-locks the app when the device is left unattended.</p>
         </div>
 
         <!-- Grades & Subjects -->
@@ -842,6 +900,23 @@ tr:hover td { background:rgba(108,52,131,0.04); }
 <div id="toastContainer"></div>
 
 <!-- ==================== FIREBASE SDK ==================== -->
+<!--
+  ╔══════════════════════════════════════════════════════════════════╗
+  ║  V8 — FIREBASE SECURITY RULES (REQUIRED — paste into console)   ║
+  ║  Firebase Console → Realtime Database → Rules                   ║
+  ║                                                                  ║
+  ║  Key points:                                                     ║
+  ║  • Each school can only read/write its own data (auth.uid=$uid)  ║
+  ║  • Operator UID has cross-school access for admin tasks          ║
+  ║  • subscription.write is OPERATOR-ONLY — schools cannot self-    ║
+  ║    activate; they can only read their subscription status        ║
+  ║  • Everything else is denied by the $other catch-all             ║
+  ║                                                                  ║
+  ║  The API key in source is safe once these rules are in place.   ║
+  ║  Firebase API keys are not secret by design — Security Rules    ║
+  ║  are the actual access control mechanism.                        ║
+  ╚══════════════════════════════════════════════════════════════════╝
+-->
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-app.js";
   import { getDatabase, ref, set, update, onValue, get } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-database.js";
@@ -906,6 +981,21 @@ const OLD_ALERTS_KEY = 'eduGenius_Alerts_v20';
 const MAX_UNDO = 30;
 const UNDO_TIMEOUT = 60000; // 60 seconds
 
+// ==================== PIN HASHING ====================
+async function hashPin(pin) {
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(pin));
+  return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2,'0')).join('');
+}
+async function pinMatches(pin, storedHash) {
+  // Support legacy plaintext PINs during migration (no '$' prefix = plaintext)
+  if (!storedHash) return false;
+  if (!storedHash.startsWith('sha256$')) return pin === storedHash; // legacy
+  return ('sha256$' + await hashPin(pin)) === storedHash;
+}
+async function storePin(pin) {
+  return 'sha256$' + await hashPin(pin);
+}
+
 // ==================== STATE ====================
 let config = {};
 let students = [];
@@ -952,6 +1042,7 @@ function getDefaultConfig() {
       perClass: {}
     },
     requireApproval: true,
+    idleTimeoutMs: 300000,
     currentTerm: 'Term 1',
     academicYear: '2025',
     currentSchool: 'default',
@@ -1175,13 +1266,16 @@ function attachFirebaseListeners() {
   window._fbOnValue(window._fbRef(window._fbDb, basePath + '/subscription'), snapshot => {
     const remote = snapshot.val();
     if (!remote || !remote.tier) return;
-    const local = getSubscription();
-    // Accept remote if newer or no local record
-    if (!local || !local._ts || (remote._ts && remote._ts > local._ts)) {
-      try { localStorage.setItem('edu_subscription', JSON.stringify(remote)); } catch(e) {}
-      renderSubscriptionStatus();
-      checkSubscription();
-    }
+    getSubscription().then(local => {
+      // Accept remote if newer or no local record
+      if (!local || !local._ts || (remote._ts && remote._ts > local._ts)) {
+        _subCache = null; // clear cache so saveSubscription re-signs
+        saveSubscription(remote).then(() => {
+          renderSubscriptionStatus();
+          checkSubscription();
+        });
+      }
+    });
   });
 
   _fbUpdateSyncBadge('live');
@@ -1206,6 +1300,19 @@ window.addEventListener('firebaseReady', () => {
       _fbWrite(_fbSchoolPath() + '/config', safeCfg);
       // Flush anything queued while signed out
       _flushRetryQueue();
+      // V8: Runtime open-rules detector — try reading another school's data.
+      // Skip if this is the operator account (it has legitimate cross-school access).
+      const OPERATOR_UID = 'd3ttBuJuTiY0EZUATKZxFbFbck12';
+      if (user.uid !== OPERATOR_UID) {
+        // Try to read a different school's config. With correct rules this must fail.
+        const otherUid = 'security-rules-check-000000000000';
+        window._fbGet(window._fbRef(window._fbDb, 'schools/' + otherUid + '/config'))
+          .then(() => {
+            console.warn('[EduGenius] Firebase Security Rules are too open — a school account can read other schools\' data. Restrict access by UID immediately.');
+            showToast('⚠️ Firebase Security Rules are not set correctly. Your data may be publicly readable.', 'error');
+          })
+          .catch(() => { /* Permission denied — rules are correct. */ });
+      }
     } else {
       _fbDetachListeners();
       _fbUpdateSyncBadge('disabled');
@@ -1328,6 +1435,16 @@ function loadData() {
     // Remove old fields if still present
     if (config.classes) delete config.classes;
     if (config.subjectTemplates) delete config.subjectTemplates;
+    // ---- V1 fix: migrate plaintext PINs to SHA-256 hashes ----
+    const pinsToMigrate = [];
+    ['appPin','headTeacherPin','masterPin'].forEach(k => {
+      if (config[k] && !config[k].startsWith('sha256$')) pinsToMigrate.push(k);
+    });
+    if (pinsToMigrate.length > 0) {
+      Promise.all(pinsToMigrate.map(k => storePin(config[k]).then(h => { config[k] = h; }))).then(() => {
+        try { localStorage.setItem(CONFIG_KEY, JSON.stringify(config)); } catch(e) {}
+      });
+    }
   } catch(e) { config = getDefaultConfig(); }
 
   try {
@@ -1418,8 +1535,8 @@ function updateUndoRedoBar() {
 }
 
 // ==================== APPROVAL SYSTEM ====================
-function requestApproval(description, callback) {
-  if (!config.requireApproval) {
+function requestApproval(description, callback, forcePin = false) {
+  if (!forcePin && !config.requireApproval) {
     callback();
     return;
   }
@@ -1433,13 +1550,18 @@ function requestApproval(description, callback) {
 
 function confirmApproval() {
   const pin = document.getElementById('approvalPin').value.trim();
-  if (pin === config.masterPin || pin === config.headTeacherPin) {
-    document.getElementById('approvalDialog').style.display = 'none';
-    if (approvalCallback) approvalCallback();
-    approvalCallback = null;
-  } else {
-    document.getElementById('approvalError').textContent = 'Incorrect PIN. Try again.';
-  }
+  Promise.all([
+    pinMatches(pin, config.masterPin),
+    pinMatches(pin, config.headTeacherPin)
+  ]).then(([m, h]) => {
+    if (m || h) {
+      document.getElementById('approvalDialog').style.display = 'none';
+      if (approvalCallback) approvalCallback();
+      approvalCallback = null;
+    } else {
+      document.getElementById('approvalError').textContent = 'Incorrect PIN. Try again.';
+    }
+  });
 }
 
 function cancelApproval() {
@@ -1593,7 +1715,11 @@ function compressPhoto(file, cb) {
 }
 
 // ==================== LOCK SCREEN ====================
+let _lockAttempts = 0;
+let _lockUntil = 0;
+
 function showLockScreen() {
+  _stopIdleWatcher();
   document.getElementById('lockScreen').style.display = 'flex';
   document.getElementById('lockError').textContent = '';
   document.getElementById('lockPinInput').value = '';
@@ -1601,14 +1727,66 @@ function showLockScreen() {
 }
 
 function attemptUnlock() {
-  const pin = document.getElementById('lockPinInput').value.trim();
-  if (pin === config.appPin || pin === config.headTeacherPin || pin === config.masterPin) {
-    document.getElementById('lockScreen').style.display = 'none';
-    showApp();
-  } else {
-    document.getElementById('lockError').textContent = 'Incorrect PIN';
-    document.getElementById('lockPinInput').value = '';
+  const now = Date.now();
+  if (_lockUntil > now) {
+    const secs = Math.ceil((_lockUntil - now) / 1000);
+    document.getElementById('lockError').textContent = `Too many attempts. Try again in ${secs}s.`;
+    return;
   }
+  const pin = document.getElementById('lockPinInput').value.trim();
+  Promise.all([
+    pinMatches(pin, config.appPin),
+    pinMatches(pin, config.headTeacherPin),
+    pinMatches(pin, config.masterPin)
+  ]).then(([a, h, m]) => {
+    if (a || h || m) {
+      _lockAttempts = 0;
+      _lockUntil = 0;
+      document.getElementById('lockScreen').style.display = 'none';
+      showApp();
+    } else {
+      _lockAttempts++;
+      document.getElementById('lockPinInput').value = '';
+      if (_lockAttempts >= 5) {
+        // Exponential back-off: 30s, 60s, 120s … capped at 10 min
+        const delay = Math.min(30000 * Math.pow(2, _lockAttempts - 5), 600000);
+        _lockUntil = Date.now() + delay;
+        const secs = Math.round(delay / 1000);
+        document.getElementById('lockError').textContent = `Too many attempts. Locked for ${secs}s.`;
+      } else {
+        const left = 5 - _lockAttempts;
+        document.getElementById('lockError').textContent = `Incorrect PIN (${left} attempt${left===1?'':'s'} left).`;
+      }
+    }
+  });
+}
+
+// ==================== IDLE AUTO-LOCK ====================
+let _idleTimer = null;
+
+function _resetIdleTimer() {
+  if (_idleTimer) clearTimeout(_idleTimer);
+  const ms = config.idleTimeoutMs || 300000;
+  if (ms === 0) return; // disabled
+  _idleTimer = setTimeout(() => {
+    // Only lock if the app is visible and not already on the lock screen
+    if (document.getElementById('appContainer').style.display !== 'none' &&
+        document.getElementById('lockScreen').style.display !== 'flex') {
+      showLockScreen();
+      document.getElementById('appContainer').style.display = 'none';
+    }
+  }, ms);
+}
+
+function _startIdleWatcher() {
+  ['mousemove','mousedown','keydown','touchstart','scroll','click'].forEach(evt => {
+    document.addEventListener(evt, _resetIdleTimer, { passive: true });
+  });
+  _resetIdleTimer();
+}
+
+function _stopIdleWatcher() {
+  if (_idleTimer) { clearTimeout(_idleTimer); _idleTimer = null; }
 }
 
 // ==================== SETUP WIZARD ====================
@@ -1629,13 +1807,15 @@ function completeSetup() {
 
   config.isSetup = true;
   config.schoolName = name;
-  config.appPin = appPin;
-  config.headTeacherPin = headPin;
-  config.masterPin = masterPin;
   config.schools = { default: name };
-  saveConfig();
-  document.getElementById('setupWizard').style.display = 'none';
-  showApp();
+  Promise.all([storePin(appPin), storePin(headPin), storePin(masterPin)]).then(([a, h, m]) => {
+    config.appPin = a;
+    config.headTeacherPin = h;
+    config.masterPin = m;
+    saveConfig();
+    document.getElementById('setupWizard').style.display = 'none';
+    showApp();
+  });
 }
 
 // ==================== SHOW APP ====================
@@ -1649,6 +1829,7 @@ function showApp() {
   showSection('dashboard');
   // Check subscription status on every login
   setTimeout(() => { if(typeof checkSubscription === 'function') checkSubscription(); }, 800);
+  _startIdleWatcher();
 }
 
 // ==================== DASHBOARD ====================
@@ -1767,7 +1948,7 @@ function renderDatabase() {
       if (editingStudentIdx === sIdx) {
         // Inline edit mode
         html += `<tr class="inline-edit">
-          <td>${s.photo ? `<img src="${s.photo}" class="photo-avatar">` : '<div class="photo-placeholder">'+escHtml(s.name.charAt(0))+'</div>'}</td>
+          <td>${s.photo ? `<img src="${safePhotoSrc(s.photo)}" class="photo-avatar">` : '<div class="photo-placeholder">'+escHtml(s.name.charAt(0))+'</div>'}</td>
           <td><input type="text" value="${esc(s.name)}" id="ie-name-${sIdx}"></td>
           <td>${escHtml(s.id)}</td>
           <td><select id="ie-sex-${sIdx}"><option value="Male" ${s.sex==='Male'?'selected':''}>Male</option><option value="Female" ${s.sex==='Female'?'selected':''}>Female</option></select></td>
@@ -1779,7 +1960,7 @@ function renderDatabase() {
         </tr>`;
       } else {
         html += `<tr>
-          <td>${s.photo ? `<img src="${s.photo}" class="photo-avatar">` : '<div class="photo-placeholder">'+escHtml(s.name.charAt(0))+'</div>'}</td>
+          <td>${s.photo ? `<img src="${safePhotoSrc(s.photo)}" class="photo-avatar">` : '<div class="photo-placeholder">'+escHtml(s.name.charAt(0))+'</div>'}</td>
           <td>${escHtml(s.name)}</td>
           <td>${escHtml(s.id)}</td>
           <td><span class="badge ${sexBadge}">${sexLabel}</span></td>
@@ -1846,13 +2027,15 @@ function saveInlineEdit(idx) {
 
 function deleteStudent(idx) {
   if (!confirm('Delete student ' + students[idx].name + '?')) return;
+  // V11 fix: forcePin=true ensures deletion always requires PIN,
+  // even when requireApproval is toggled off for routine saves.
   requestApproval('Delete student: ' + students[idx].name, () => {
     pushUndo();
     students.splice(idx, 1);
     saveStudents();
     renderDatabase();
     showToast('Student deleted');
-  });
+  }, true);
 }
 
 function viewProfile(idx) {
@@ -1923,7 +2106,7 @@ function renderProfile(idx) {
   document.getElementById('profileContent').innerHTML = `
     <div class="card" style="display:flex;gap:20px;flex-wrap:wrap;align-items:flex-start">
       <div style="text-align:center">
-        ${s.photo ? `<img src="${s.photo}" style="width:100px;height:100px;border-radius:50%;object-fit:cover;border:3px solid var(--primary)">` : '<div style="width:100px;height:100px;border-radius:50%;background:var(--primary-light);color:#fff;display:flex;align-items:center;justify-content:center;font-size:36px;font-weight:700">'+escHtml(s.name.charAt(0))+'</div>'}
+        ${s.photo ? `<img src="${safePhotoSrc(s.photo)}" style="width:100px;height:100px;border-radius:50%;object-fit:cover;border:3px solid var(--primary)">` : '<div style="width:100px;height:100px;border-radius:50%;background:var(--primary-light);color:#fff;display:flex;align-items:center;justify-content:center;font-size:36px;font-weight:700">'+escHtml(s.name.charAt(0))+'</div>'}
         <div style="margin-top:8px"><span class="badge ${s.sex==='Male'?'badge-m':'badge-f'}">${s.sex==='Male'?'♂ Male':s.sex==='Female'?'♀ Female':''}</span></div>
       </div>
       <div style="flex:1;min-width:200px">
@@ -2053,7 +2236,7 @@ function handleRegPhoto(event) {
   });
 }
 
-function registerStudent() {
+async function registerStudent() {
   const name = document.getElementById('regName').value.trim();
   const sex = document.getElementById('regSex').value;
   const id = document.getElementById('regId').value.trim() || genId();
@@ -2064,8 +2247,8 @@ function registerStudent() {
   if (!cls) return showToast('Select class','error');
 
   // Check subscription student limit
-  if (typeof isWithinStudentLimit === 'function' && !isWithinStudentLimit()) {
-    const sub = getSubscription();
+  if (typeof isWithinStudentLimit === 'function' && !(await isWithinStudentLimit())) {
+    const sub = await getSubscription();
     const tier = sub ? TIERS[sub.tier] : null;
     return showToast(`Student limit reached (${tier ? tier.students : '?'} on ${sub ? sub.tier : ''} plan). Please upgrade.`, 'error');
   }
@@ -2591,9 +2774,10 @@ function generateReport() {
   const pin = document.getElementById('reportPin').value.trim();
 
   if (idx === '') return showToast('Select a student','error');
-  if (pin !== config.masterPin && pin !== config.headTeacherPin) return showToast('Incorrect authorization PIN','error');
+  Promise.all([pinMatches(pin, config.masterPin), pinMatches(pin, config.headTeacherPin)]).then(([m, h]) => {
+    if (!m && !h) return showToast('Incorrect authorization PIN','error');
 
-  const s = students[idx];
+    const s = students[idx];
   let report = '';
 
   if (type === 'academic') {
@@ -2629,6 +2813,7 @@ function generateReport() {
     </div>`;
   document.getElementById('reportPreview').dataset.reportText = report;
   document.getElementById('reportPin').value = '';
+  }); // end pinMatches
 }
 
 function copyReport() {
@@ -2647,10 +2832,19 @@ function downloadReport() {
 
 // ==================== ADMIN SETTINGS ====================
 function renderAdmin() {
-  document.getElementById('adminAppPin').value = config.appPin;
-  document.getElementById('adminHeadPin').value = config.headTeacherPin;
-  document.getElementById('adminMasterPin').value = config.masterPin;
+  // Reset PIN change form to locked state every time admin panel opens
+  document.getElementById('adminCurrentMasterPin').value = '';
+  document.getElementById('pinUnlockError').textContent = '';
+  document.getElementById('pinChangeForm').style.display = 'none';
+  const appPin = document.getElementById('adminAppPin');
+  const headPin = document.getElementById('adminHeadPin');
+  const masterPin = document.getElementById('adminMasterPin');
+  if (appPin) appPin.value = '';
+  if (headPin) headPin.value = '';
+  if (masterPin) masterPin.value = '';
   document.getElementById('adminRequireApproval').checked = config.requireApproval;
+  const idleSel = document.getElementById('adminIdleTimeout');
+  if (idleSel) idleSel.value = String(config.idleTimeoutMs ?? 300000);
   document.getElementById('adminWCA1').value = config.weight_ca1;
   document.getElementById('adminWCA2').value = config.weight_ca2;
   document.getElementById('adminWFinal').value = config.weight_final;
@@ -2668,15 +2862,44 @@ function renderAdmin() {
   renderSchools();
 }
 
+function unlockPinForm() {
+  const entered = document.getElementById('adminCurrentMasterPin').value.trim();
+  if (!entered) {
+    document.getElementById('pinUnlockError').textContent = 'Enter your current Master PIN.';
+    return;
+  }
+  pinMatches(entered, config.masterPin).then(ok => {
+    if (ok) {
+      document.getElementById('pinChangeForm').style.display = 'block';
+      document.getElementById('adminCurrentMasterPin').value = '';
+      document.getElementById('pinUnlockError').textContent = '';
+    } else {
+      document.getElementById('pinUnlockError').textContent = 'Incorrect Master PIN.';
+      document.getElementById('adminCurrentMasterPin').value = '';
+    }
+  });
+}
+
 function savePins() {
-  const masterPin = document.getElementById('adminMasterPin').value.trim();
-  if (!masterPin) return showToast('Master PIN required','error');
-  config.appPin = document.getElementById('adminAppPin').value.trim() || config.appPin;
-  config.headTeacherPin = document.getElementById('adminHeadPin').value.trim() || config.headTeacherPin;
-  config.masterPin = masterPin;
-  delete config._pinsNotSet; // clear first-login prompt flag
-  saveConfig();
-  showToast('PINs saved');
+  const masterPinRaw = document.getElementById('adminMasterPin').value.trim();
+  if (!masterPinRaw) return showToast('Master PIN required','error');
+  const appPinRaw = document.getElementById('adminAppPin').value.trim();
+  const headPinRaw = document.getElementById('adminHeadPin').value.trim();
+  Promise.all([
+    appPinRaw   ? storePin(appPinRaw)   : Promise.resolve(config.appPin),
+    headPinRaw  ? storePin(headPinRaw)  : Promise.resolve(config.headTeacherPin),
+    storePin(masterPinRaw)
+  ]).then(([a, h, m]) => {
+    config.appPin = a;
+    config.headTeacherPin = h;
+    config.masterPin = m;
+    delete config._pinsNotSet;
+    saveConfig();
+    // Re-lock the PIN change form after saving
+    document.getElementById('pinChangeForm').style.display = 'none';
+    document.getElementById('adminCurrentMasterPin').value = '';
+    showToast('PINs saved');
+  });
 }
 
 // Approval toggle
@@ -2685,6 +2908,14 @@ document.getElementById('adminRequireApproval')?.addEventListener('change', func
   saveConfig();
   showToast(config.requireApproval ? 'Approval required' : 'Approval disabled');
 });
+
+function saveIdleTimeout() {
+  const sel = document.getElementById('adminIdleTimeout');
+  config.idleTimeoutMs = parseInt(sel.value) || 300000;
+  saveConfig();
+  _resetIdleTimer(); // apply new timeout immediately
+  showToast(config.idleTimeoutMs === 0 ? 'Auto-lock disabled' : 'Auto-lock updated');
+}
 
 function saveWeighting() {
   config.weight_ca1 = parseInt(document.getElementById('adminWCA1').value) || 20;
@@ -3079,17 +3310,29 @@ function importData(event) {
   reader.onload = function(e) {
     try {
       const data = JSON.parse(e.target.result);
-      if (data.config) {
-        config = data.config;
-        if (!config.grades) config.grades = getDefaultConfig().grades;
-        if (!config.feeStructure) config.feeStructure = getDefaultConfig().feeStructure;
-        if (config.requireApproval === undefined) config.requireApproval = true;
-      }
-      if (data.students) students = data.students.map(s => migrateStudent(s));
-      if (data.alerts) alerts = data.alerts;
-      saveConfig(); saveStudents(); saveAlerts();
-      showToast('Data imported successfully');
-      refreshCurrentSection();
+      // V7 fix: require Master or Head Teacher PIN before overwriting any data
+      requestApproval('Import backup data (this will overwrite current config and students)', () => {
+        if (data.config) {
+          // Preserve existing hashed PINs — never let an import overwrite them
+          const existingPins = {
+            appPin: config.appPin,
+            headTeacherPin: config.headTeacherPin,
+            masterPin: config.masterPin
+          };
+          config = data.config;
+          config.appPin = existingPins.appPin;
+          config.headTeacherPin = existingPins.headTeacherPin;
+          config.masterPin = existingPins.masterPin;
+          if (!config.grades) config.grades = getDefaultConfig().grades;
+          if (!config.feeStructure) config.feeStructure = getDefaultConfig().feeStructure;
+          if (config.requireApproval === undefined) config.requireApproval = true;
+        }
+        if (data.students) students = data.students.map(s => migrateStudent(s));
+        if (data.alerts) alerts = data.alerts;
+        saveConfig(); saveStudents(); saveAlerts();
+        showToast('Data imported successfully');
+        refreshCurrentSection();
+      });
     } catch(err) {
       showToast('Invalid import file','error');
     }
@@ -3113,12 +3356,24 @@ function clearAllData() {
     showLockScreen();
     document.getElementById('appContainer').style.display = 'none';
     showSetupWizard();
-  });
+  }, true); // forcePin — always require PIN regardless of requireApproval setting
 }
 
 // ==================== ESCAPING ====================
 function esc(str) { return String(str||'').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/'/g,'&#39;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 function escHtml(str) { return String(str||'').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/'/g,'&#39;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+// V6 fix: only allow data: URIs (base64 photos) or safe https: URLs in photo src.
+// Anything else (e.g. x" onerror="...") is rejected and replaced with empty string.
+function safePhotoSrc(url) {
+  if (!url) return '';
+  const s = String(url);
+  if (s.startsWith('data:image/jpeg;base64,') ||
+      s.startsWith('data:image/png;base64,')  ||
+      s.startsWith('data:image/gif;base64,')  ||
+      s.startsWith('data:image/webp;base64,') ||
+      s.startsWith('https://')) return esc(s);
+  return ''; // reject anything else
+}
 
 // ==================== KEYBOARD SHORTCUTS ====================
 document.addEventListener('keydown', function(e) {
@@ -3777,7 +4032,7 @@ function renderUsersEdu(){
  let el=document.getElementById('userListEdu');
  if(!el) return;
  el.innerHTML=users.map((u,i)=>
- '<div>'+u.username+' ('+u.role+') <button onclick="delUserEdu('+i+')">Delete</button></div>'
+ '<div>'+escHtml(u.username)+' ('+escHtml(u.role)+') <button onclick="delUserEdu('+i+')">Delete</button></div>'
  ).join('');
 }
 
@@ -3794,7 +4049,7 @@ function renderAuditEdu(){
  let logs=JSON.parse(localStorage.getItem('edu_audit_logs')||'[]');
  let el=document.getElementById('auditListEdu');
  if(!el) return;
- el.innerHTML=logs.slice(0,50).map(l=>'<div>'+l.time+' - '+l.action+'</div>').join('');
+ el.innerHTML=logs.slice(0,50).map(l=>'<div>'+escHtml(l.time)+' - '+escHtml(l.action)+'</div>').join('');
 }
 </script>
 
@@ -3866,18 +4121,66 @@ const TIERS = {
   Standard: { monthly: 400, annual: 4000, students: 1000 }
 };
 
-function getSubscription() {
-  try { return JSON.parse(localStorage.getItem('edu_subscription') || 'null'); } catch(e) { return null; }
+// ---- Subscription integrity: HMAC-SHA256 ----
+// The signing key is derived from the Firebase UID + a fixed app secret.
+// This means a tampered localStorage value fails verification on load.
+async function _subSignKey() {
+  const uid = (window._fbAuth && window._fbAuth.currentUser)
+    ? window._fbAuth.currentUser.uid : 'anon';
+  const raw = 'EduGenius_SubIntegrity_v1:' + uid;
+  const keyMaterial = await crypto.subtle.importKey(
+    'raw', new TextEncoder().encode(raw), { name: 'HMAC', hash: 'SHA-256' }, false, ['sign', 'verify']
+  );
+  return keyMaterial;
 }
 
-function saveSubscription(data) {
-  localStorage.setItem('edu_subscription', JSON.stringify(data));
+async function _subSign(data) {
+  const key = await _subSignKey();
+  const payload = JSON.stringify(data);
+  const sig = await crypto.subtle.sign('HMAC', key, new TextEncoder().encode(payload));
+  return Array.from(new Uint8Array(sig)).map(b => b.toString(16).padStart(2,'0')).join('');
+}
+
+async function _subVerify(data, sig) {
+  try {
+    const expected = await _subSign(data);
+    return expected === sig;
+  } catch(e) { return false; }
+}
+
+// In-memory subscription cache — the ONLY runtime source of truth.
+// localStorage is used only as a signed cache; Firebase is the authority.
+let _subCache = null;
+
+async function getSubscription() {
+  if (_subCache !== null) return _subCache;
+  try {
+    const raw = localStorage.getItem('edu_subscription');
+    if (!raw) return null;
+    const { data, sig } = JSON.parse(raw);
+    if (!data || !sig) return null;
+    const valid = await _subVerify(data, sig);
+    if (!valid) {
+      // Tampered — discard
+      localStorage.removeItem('edu_subscription');
+      console.warn('Subscription integrity check failed. Cache cleared.');
+      return null;
+    }
+    _subCache = data;
+    return data;
+  } catch(e) { return null; }
+}
+
+async function saveSubscription(data) {
+  _subCache = data;
+  const sig = await _subSign(data);
+  localStorage.setItem('edu_subscription', JSON.stringify({ data, sig }));
   // Mirror to Firebase so operator activations from mdm-admin push through
   _fbWrite(_fbSchoolPath() + '/subscription', data);
 }
 
-function checkSubscription() {
-  const sub = getSubscription();
+async function checkSubscription() {
+  const sub = await getSubscription();
   const badge = document.getElementById('subStatusBadge');
 
   if (!sub) {
@@ -3906,8 +4209,8 @@ function checkSubscription() {
   }
 }
 
-function isWithinStudentLimit() {
-  const sub = getSubscription();
+async function isWithinStudentLimit() {
+  const sub = await getSubscription();
   if (!sub) return true; // no sub = allow during trial
   const tier = TIERS[sub.tier];
   if (!tier) return true;
@@ -3918,10 +4221,10 @@ function isWithinStudentLimit() {
 // Subscription activation is handled by the operator panel (schoolpro-admin.html).
 // Schools receive their subscription status via Firebase real-time sync.
 
-function renderSubscriptionStatus() {
+async function renderSubscriptionStatus() {
   const el = document.getElementById('subscriptionStatus');
   if (!el) return;
-  const sub = getSubscription();
+  const sub = await getSubscription();
   if (!sub) {
     el.innerHTML = '<span style="color:#E67E22">No active subscription — 1-month free trial active.</span>';
     return;
