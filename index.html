@@ -3555,104 +3555,91 @@ function _clearSignupError() {
 
 async function signupFromLanding(){
   _clearSignupError();
+
   const schoolName = document.getElementById('lpSchoolName').value.trim();
   const adminEmail = document.getElementById('lpAdminEmail').value.trim();
   const adminUser  = document.getElementById('lpAdminUser').value.trim();
   const adminPass  = document.getElementById('lpAdminPass').value;
-  const adminPassConfirm = (document.getElementById('lpAdminPassConfirm') || {}).value || '';
+  const confirmEl  = document.getElementById('lpAdminPassConfirm');
+  const adminPassConfirm = confirmEl ? confirmEl.value : adminPass;
 
-  if(!schoolName){ _showSignupError('Enter your school name'); return; }
+  if(!schoolName)                             { _showSignupError('Enter your school name'); return; }
   if(!adminEmail || !adminEmail.includes('@')){ _showSignupError('Enter a valid email address'); return; }
-  if(!adminUser){ _showSignupError('Choose an admin username'); return; }
-  if(!adminPass || adminPass.length < 6){ _showSignupError('Password must be at least 6 characters'); return; }
-  if(document.getElementById('lpAdminPassConfirm') && adminPass !== adminPassConfirm){
-    _showSignupError('Passwords do not match'); return;
-  }
+  if(!adminUser)                              { _showSignupError('Choose an admin username'); return; }
+  if(!adminPass || adminPass.length < 6)      { _showSignupError('Password must be at least 6 characters'); return; }
+  if(adminPass !== adminPassConfirm)          { _showSignupError('Passwords do not match'); return; }
 
-  const existingUsers = JSON.parse(localStorage.getItem('eduGenius_users_v1') || '[]');
-  if(existingUsers.find(x => x.username.trim().toLowerCase() === adminUser.toLowerCase())){
-    _showSignupError('That username is already taken'); return;
-  }
-
-  _setAuthBtn('lpSignupBtn', true, 'Create School Account');
-  const _progress = msg => {
+  _setAuthBtn('lpSignupBtn', true, 'Please wait\u2026');
+  const _prog = msg => {
     const el = document.getElementById('lpSignupProgress');
-    if (el) { el.textContent = msg; el.style.display = 'block'; }
+    if(el){ el.textContent = msg; el.style.display = 'block'; }
   };
+
   try {
-    // 1. Wait for Firebase SDK (with 10s timeout)
-    _progress('⏳ Connecting to server…');
+    // 1. Wait for Firebase (20s timeout)
+    _prog('\u29d0 Connecting\u2026');
     try {
       await Promise.race([
         _waitForFirebase(),
-        new Promise((_, reject) => setTimeout(() => reject({ code: 'app/timeout' }), 10000))
+        new Promise((_, rej) => setTimeout(() => rej({ code:'app/timeout' }), 20000))
       ]);
-    } catch(err) {
-      _showSignupError('Connection timed out. Check your internet and try again.', true);
+    } catch(e) {
+      _showSignupError('Could not reach the server. Check your internet and tap Retry.', true);
       return;
     }
 
-    _progress('⏳ Creating your account…');
+    // 2. Create Firebase Auth account
+    _prog('\u29d0 Creating account\u2026');
     let fbUser;
     try {
-      const cred = await window._fbCreateUser(adminEmail, adminPass);
-      fbUser = cred.user;
+      fbUser = (await window._fbCreateUser(adminEmail, adminPass)).user;
     } catch(err) {
-      const retryable = err.code === 'auth/network-request-failed' || err.code === 'auth/too-many-requests';
-      const msg = err.code === 'auth/email-already-in-use'
-        ? 'That email is already registered — try logging in instead'
-        : err.code === 'auth/weak-password' ? 'Password too weak (min 6 chars)'
-        : err.code === 'auth/network-request-failed' ? 'No internet connection. Please check your network.'
-        : err.code === 'auth/too-many-requests' ? 'Too many attempts. Please wait a moment and try again.'
-        : (err.message || 'Sign-up failed. Please try again.');
-      _showSignupError(msg, retryable);
+      const code = err.code || '';
+      const msg =
+        code === 'auth/email-already-in-use'  ? 'That email already has an account \u2014 tap "Log in instead".' :
+        code === 'auth/weak-password'          ? 'Password too weak \u2014 use at least 6 characters.' :
+        code === 'auth/network-request-failed' ? 'No internet. Check your connection and tap Retry.' :
+        code === 'auth/too-many-requests'      ? 'Too many attempts. Wait a moment then tap Retry.' :
+        code === 'auth/invalid-email'          ? 'That email address is not valid.' :
+        (err.message || 'Account creation failed \u2014 tap Retry.');
+      _showSignupError(msg, true);
       return;
     }
 
-    // 2. Set up school config
-    config.isSetup = true;
-    config.schoolName = schoolName;
-    config.appPin = '0000';
+    // 3. Seed config
+    config.isSetup        = true;
+    config.schoolName     = schoolName;
+    config.appPin         = '0000';
     config.headTeacherPin = '0000';
-    config.masterPin = '0000';
-    config._pinsNotSet = true;
-    config.currentSchool = fbUser.uid;
-    config.schools = { [fbUser.uid]: schoolName };
+    config.masterPin      = '0000';
+    config._pinsNotSet    = true;
+    config.currentSchool  = fbUser.uid;
+    config.schools        = { [fbUser.uid]: schoolName };
     saveConfig();
 
-    // 3. Seed Super Admin user record with PBKDF2 hash
-    _progress('⏳ Securing your credentials…');
-    const { passwordHash, salt, kdf } = await makePasswordRecord(adminPass);
-    const newUsers = existingUsers.concat([{ username: adminUser, passwordHash, salt, kdf, role: 'Super Admin', email: adminEmail }]);
-    if(typeof _saveUsers === 'function'){
-      _saveUsers(newUsers);
-    } else {
-      localStorage.setItem('eduGenius_users_v1', JSON.stringify(newUsers));
-      window.eduUsers = newUsers;
-    }
-    if(typeof addAudit === 'function') addAudit('School created, admin user added: ' + adminUser);
+    // 4. Hash password async (non-blocking)
+    const existingUsers = JSON.parse(localStorage.getItem('eduGenius_users_v1') || '[]');
+    makePasswordRecord(adminPass).then(({ passwordHash, salt, kdf }) => {
+      const newUsers = existingUsers.concat([{
+        username: adminUser, passwordHash, salt, kdf,
+        role: 'Super Admin', email: adminEmail
+      }]);
+      if(typeof _saveUsers === 'function') _saveUsers(newUsers);
+      else { localStorage.setItem('eduGenius_users_v1', JSON.stringify(newUsers)); window.eduUsers = newUsers; }
+      if(typeof addAudit === 'function') addAudit('School created: ' + adminUser);
+    });
 
+    // 5. Enter app
     sessionStorage.setItem('eduUser', JSON.stringify({ username: adminUser, role: 'Super Admin' }));
     currentUser = { username: adminUser, role: 'Super Admin' };
-
-    const progressEl = document.getElementById('lpSignupProgress');
-    if (progressEl) progressEl.style.display = 'none';
     closeLandingAuth('signup');
     hideLandingPage();
-    showApp();
-    showToast('Welcome to School Pro! Set your PINs under Admin → Settings.');
+    showSetupWizard();
 
-    // Non-blocking PIN reminder — navigates to admin after a short delay without a confirm dialog
-    setTimeout(() => {
-      if(config._pinsNotSet){
-        showToast('⚠️ Your PINs are still 0000 — go to Admin Settings to change them.', 'error');
-        setTimeout(() => { showSection('admin'); }, 1800);
-      }
-    }, 1200);
   } finally {
     _setAuthBtn('lpSignupBtn', false, 'Create School Account');
-    const progressEl = document.getElementById('lpSignupProgress');
-    if (progressEl && progressEl.style.display !== 'none') progressEl.style.display = 'none';
+    const el = document.getElementById('lpSignupProgress');
+    if(el) el.style.display = 'none';
   }
 }
 
