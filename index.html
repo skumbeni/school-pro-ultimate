@@ -146,6 +146,10 @@ input:focus,select:focus,textarea:focus { border-color:var(--primary); }
 .lp-auth-box input,.lp-auth-box select { width:100%; }
 .lp-auth-switch { text-align:center; margin-top:16px; font-size:13px; color:var(--text-light); }
 .lp-auth-switch a { color:var(--primary); font-weight:600; cursor:pointer; text-decoration:none; }
+.lp-field-hint { font-size:12px; min-height:16px; margin:-4px 0 6px; padding-left:2px; }
+.lp-field-hint.taken  { color:#E74C3C; }
+.lp-field-hint.avail  { color:#27AE60; }
+.lp-field-hint.warn   { color:#E67E22; }
 .lp-btn-google { background:#fff; color:#3c4043; border:1px solid #dadce0; font-weight:600; display:inline-flex; align-items:center; justify-content:center; gap:10px; width:100%; padding:11px; border-radius:7px; cursor:pointer; font-size:14px; transition:box-shadow 0.2s; margin-top:10px; }
 .lp-btn-google:hover { box-shadow:0 2px 8px rgba(0,0,0,0.18); }
 .lp-btn-google svg { flex-shrink:0; }
@@ -428,15 +432,19 @@ tr:hover td { background:rgba(108,52,131,0.04); }
       <h2 class="lp-font">Set up your school</h2>
       <p class="lp-auth-sub">Creates your school's workspace and your Super Admin login.</p>
       <label>School Name</label>
-      <input id="lpSchoolName" placeholder="e.g. Lusaka Academy">
+      <input id="lpSchoolName" placeholder="e.g. Lusaka Academy" oninput="checkSignupField('school')">
+      <div id="lpSchoolHint" class="lp-field-hint"></div>
       <label>Email</label>
-      <input id="lpAdminEmail" type="email" placeholder="admin@yourschool.com">
+      <input id="lpAdminEmail" type="email" placeholder="admin@yourschool.com" oninput="checkSignupField('email')">
+      <div id="lpEmailHint" class="lp-field-hint"></div>
       <label>Admin Username</label>
-      <input id="lpAdminUser" placeholder="Choose a username">
+      <input id="lpAdminUser" placeholder="Choose a username" oninput="checkSignupField('username')">
+      <div id="lpUserHint" class="lp-field-hint"></div>
       <label>Admin Password</label>
       <input id="lpAdminPass" type="password" placeholder="Choose a password (min 6 chars)">
       <label>Confirm Password</label>
-      <input id="lpAdminPassConfirm" type="password" placeholder="Re-enter password">
+      <input id="lpAdminPassConfirm" type="password" placeholder="Re-enter password" oninput="checkSignupField('confirm')">
+      <div id="lpConfirmHint" class="lp-field-hint"></div>
       <button id="lpSignupBtn" class="lp-btn lp-btn-gold lp-btn-block" style="margin-top:16px" onclick="signupFromLanding()">Create School Account</button>
       <div class="lp-auth-divider">or</div>
       <button id="lpGoogleSignupBtn" class="lp-btn-google" onclick="googleSignIn()">
@@ -3120,6 +3128,7 @@ function hideLandingPage(){
 
 function openLandingAuth(mode){
   document.getElementById(mode === 'login' ? 'lpLoginOverlay' : 'lpSignupOverlay').style.display = 'flex';
+  if (mode === 'signup' && typeof _clearSignupHints === 'function') _clearSignupHints();
 }
 
 function closeLandingAuth(mode){
@@ -3291,6 +3300,75 @@ async function signupFromLanding(){
   } finally {
     _setAuthBtn('lpSignupBtn', false, 'Create School Account');
   }
+}
+
+// ==================== SIGNUP FIELD VALIDATION ====================
+// Debounce timers per field
+const _signupCheckTimers = {};
+
+function checkSignupField(field) {
+  clearTimeout(_signupCheckTimers[field]);
+  _signupCheckTimers[field] = setTimeout(() => _doCheckSignupField(field), 350);
+}
+
+function _setHint(id, msg, type) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.textContent = msg;
+  el.className = 'lp-field-hint' + (type ? ' ' + type : '');
+}
+
+function _doCheckSignupField(field) {
+  const users = JSON.parse(localStorage.getItem('eduGenius_users_v1') || '[]');
+  const allSchools = Object.values(
+    JSON.parse(localStorage.getItem('eduGenius_Config_v21') || '{}').schools || {}
+  ).map(s => s.trim().toLowerCase());
+
+  if (field === 'school') {
+    const val = (document.getElementById('lpSchoolName').value || '').trim();
+    if (!val) { _setHint('lpSchoolHint', '', ''); return; }
+    const taken = allSchools.includes(val.toLowerCase());
+    taken
+      ? _setHint('lpSchoolHint', '✖ A school with this name already exists on this device', 'taken')
+      : _setHint('lpSchoolHint', '✔ Available', 'avail');
+  }
+
+  if (field === 'email') {
+    const val = (document.getElementById('lpAdminEmail').value || '').trim().toLowerCase();
+    if (!val || !val.includes('@')) { _setHint('lpEmailHint', '', ''); return; }
+    const taken = users.some(x => (x.email || '').toLowerCase() === val);
+    taken
+      ? _setHint('lpEmailHint', '✖ Email already registered to an account', 'taken')
+      : _setHint('lpEmailHint', '✔ Available', 'avail');
+  }
+
+  if (field === 'username') {
+    const val = (document.getElementById('lpAdminUser').value || '').trim().toLowerCase();
+    if (!val) { _setHint('lpUserHint', '', ''); return; }
+    if (val.length < 3) { _setHint('lpUserHint', 'Username must be at least 3 characters', 'warn'); return; }
+    const taken = users.some(x => x.username.trim().toLowerCase() === val);
+    taken
+      ? _setHint('lpUserHint', '✖ Username already taken', 'taken')
+      : _setHint('lpUserHint', '✔ Available', 'avail');
+  }
+
+  if (field === 'confirm') {
+    const pass    = (document.getElementById('lpAdminPass').value || '');
+    const confirm = (document.getElementById('lpAdminPassConfirm').value || '');
+    if (!confirm) { _setHint('lpConfirmHint', '', ''); return; }
+    confirm === pass
+      ? _setHint('lpConfirmHint', '✔ Passwords match', 'avail')
+      : _setHint('lpConfirmHint', '✖ Passwords do not match', 'taken');
+  }
+}
+
+// Clear all signup hints when overlay opens
+function _clearSignupHints() {
+  ['lpSchoolHint','lpEmailHint','lpUserHint','lpConfirmHint'].forEach(id => _setHint(id,'',''));
+  ['lpSchoolName','lpAdminEmail','lpAdminUser','lpAdminPass','lpAdminPassConfirm'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value = '';
+  });
 }
 
 // ==================== GOOGLE SIGN-IN ====================
@@ -3770,9 +3848,9 @@ document.addEventListener('DOMContentLoaded',function(){
 <script>
 // ==================== SUBSCRIPTION SYSTEM ====================
 const TIERS = {
-  Starter:  { monthly: 49,  annual: 490,  students: 100  },
-  Basic:    { monthly: 99,  annual: 990,  students: 300  },
-  Standard: { monthly: 199, annual: 1990, students: 1000 }
+  Starter:  { monthly: 250, annual: 2500, students: 100  },
+  Basic:    { monthly: 300, annual: 3000, students: 300  },
+  Standard: { monthly: 400, annual: 4000, students: 1000 }
 };
 
 function getSubscription() {
@@ -3882,24 +3960,24 @@ document.addEventListener('DOMContentLoaded', function() {
         <tbody>
           <tr style="border-bottom:1px solid var(--border)">
             <td style="padding:8px 12px"><strong>Starter</strong></td>
-            <td style="padding:8px 12px;text-align:right">K49/mo</td>
-            <td style="padding:8px 12px;text-align:right">K490/yr</td>
+            <td style="padding:8px 12px;text-align:right">K250/mo</td>
+            <td style="padding:8px 12px;text-align:right">K2,500/yr</td>
             <td style="padding:8px 12px;text-align:right">Up to 100</td>
-            <td style="padding:8px 12px;text-align:right;color:#27AE60">Save K98</td>
+            <td style="padding:8px 12px;text-align:right;color:#27AE60">Save K500</td>
           </tr>
           <tr style="border-bottom:1px solid var(--border)">
             <td style="padding:8px 12px"><strong>Basic</strong></td>
-            <td style="padding:8px 12px;text-align:right">K99/mo</td>
-            <td style="padding:8px 12px;text-align:right">K990/yr</td>
+            <td style="padding:8px 12px;text-align:right">K300/mo</td>
+            <td style="padding:8px 12px;text-align:right">K3,000/yr</td>
             <td style="padding:8px 12px;text-align:right">Up to 300</td>
-            <td style="padding:8px 12px;text-align:right;color:#27AE60">Save K198</td>
+            <td style="padding:8px 12px;text-align:right;color:#27AE60">Save K600</td>
           </tr>
           <tr>
             <td style="padding:8px 12px"><strong>Standard</strong></td>
-            <td style="padding:8px 12px;text-align:right">K199/mo</td>
-            <td style="padding:8px 12px;text-align:right">K1,990/yr</td>
+            <td style="padding:8px 12px;text-align:right">K400/mo</td>
+            <td style="padding:8px 12px;text-align:right">K4,000/yr</td>
             <td style="padding:8px 12px;text-align:right">Up to 1,000</td>
-            <td style="padding:8px 12px;text-align:right;color:#27AE60">Save K398</td>
+            <td style="padding:8px 12px;text-align:right;color:#27AE60">Save K800</td>
           </tr>
         </tbody>
       </table>
