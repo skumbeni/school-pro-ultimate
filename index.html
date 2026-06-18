@@ -3,7 +3,10 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>EduGenius Pro Ultimate</title>
+<title>School Pro Ultimate</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,500;0,600;0,700;1,500&display=swap" rel="stylesheet">
 <style>
 :root {
   --primary: #6C3483; --primary-light: #A569BD; --primary-dark: #4A235A;
@@ -56,6 +59,95 @@ input:focus,select:focus,textarea:focus { border-color:var(--primary); }
 .wizard-box h2 { color:var(--primary); margin-bottom:20px; }
 .wizard-box label { display:block; font-weight:600; margin:12px 0 4px; }
 .wizard-box input,.wizard-box select { width:100%; margin-bottom:8px; }
+
+/* ==================== LANDING PAGE ==================== */
+#landingPage { position:fixed; inset:0; z-index:9998; overflow-y:auto; background:#241334; }
+#landingPage .lp-font { font-family:'Fraunces',Georgia,serif; }
+#landingPage * { box-sizing:border-box; }
+
+.lp-stamp { position:relative; width:104px; height:104px; border-radius:50%; border:3px solid #D9B65C; display:flex; align-items:center; justify-content:center; flex-shrink:0; transform:rotate(-6deg); }
+.lp-stamp::before { content:''; position:absolute; inset:8px; border:1px solid rgba(217,182,92,0.5); border-radius:50%; }
+.lp-stamp-mark { font-family:'Fraunces',Georgia,serif; font-size:40px; font-weight:600; color:#D9B65C; }
+
+.lp-hero { position:relative; padding:54px 24px 70px; background:radial-gradient(ellipse at top left,#3A1D52,#241334 65%); color:#F4ECE0; overflow:hidden; }
+.lp-hero::after { content:''; position:absolute; right:-120px; top:-120px; width:360px; height:360px; border-radius:50%; background:radial-gradient(circle,rgba(217,182,92,0.16),transparent 70%); pointer-events:none; }
+.lp-hero-inner { max-width:1080px; margin:0 auto; position:relative; z-index:1; }
+.lp-topbar { display:flex; align-items:center; justify-content:space-between; margin-bottom:48px; gap:16px; }
+.lp-brand { display:flex; align-items:center; gap:12px; }
+.lp-brand-name { font-size:19px; font-weight:700; letter-spacing:0.3px; }
+.lp-brand-name small { display:block; font-size:10.5px; font-weight:400; letter-spacing:1.5px; color:#C9A8E0; text-transform:uppercase; margin-top:2px; }
+.lp-topbar-actions { display:flex; gap:10px; }
+.lp-btn { display:inline-flex; align-items:center; justify-content:center; gap:6px; padding:11px 22px; border-radius:7px; font-size:14px; font-weight:600; cursor:pointer; border:1px solid transparent; transition:all 0.2s ease; white-space:nowrap; }
+.lp-btn-ghost { background:transparent; border-color:rgba(244,236,224,0.35); color:#F4ECE0; }
+.lp-btn-ghost:hover { border-color:#D9B65C; color:#D9B65C; }
+.lp-btn-gold { background:#D9B65C; color:#241334; }
+.lp-btn-gold:hover { background:#E8CB7E; }
+.lp-btn-block { width:100%; padding:13px 22px; }
+
+.lp-hero-grid { display:grid; grid-template-columns:1.2fr 0.8fr; gap:50px; align-items:center; }
+.lp-eyebrow { display:inline-block; font-size:11.5px; letter-spacing:2px; text-transform:uppercase; color:#D9B65C; border:1px solid rgba(217,182,92,0.4); padding:5px 12px; border-radius:20px; margin-bottom:20px; }
+.lp-hero h1 { font-size:46px; line-height:1.12; font-weight:600; margin-bottom:18px; color:#FBF7EF; }
+.lp-hero h1 em { font-style:italic; color:#D9B65C; }
+.lp-hero-sub { font-size:16.5px; line-height:1.65; color:#D8C9E6; max-width:480px; margin-bottom:30px; }
+.lp-hero-ctas { display:flex; gap:12px; flex-wrap:wrap; margin-bottom:28px; }
+.lp-trust { font-size:12.5px; color:#A98FC2; }
+
+.lp-report-card { background:#FBF7EF; border-radius:10px; padding:26px 24px; color:#241334; box-shadow:0 30px 70px rgba(0,0,0,0.45); transform:rotate(2deg); }
+.lp-report-card-head { display:flex; justify-content:space-between; align-items:flex-start; border-bottom:2px solid #241334; padding-bottom:10px; margin-bottom:14px; }
+.lp-report-card-head h4 { font-family:'Fraunces',Georgia,serif; font-size:15px; font-weight:600; }
+.lp-report-card-head span { font-size:10.5px; color:#7F8C8D; letter-spacing:0.5px; }
+.lp-rc-row { display:flex; justify-content:space-between; align-items:center; padding:7px 0; font-size:13px; border-bottom:1px dashed #D5D8DC; }
+.lp-rc-row:last-child { border-bottom:none; }
+.lp-rc-grade { font-weight:700; color:#27AE60; }
+
+.lp-section { max-width:1080px; margin:0 auto; padding:64px 24px; }
+.lp-section-head { max-width:560px; margin-bottom:36px; }
+.lp-section-eyebrow { font-size:11.5px; letter-spacing:2px; text-transform:uppercase; color:#6C3483; font-weight:700; margin-bottom:8px; }
+.lp-section-head h2 { font-size:30px; font-weight:600; color:#241334; line-height:1.25; }
+.lp-light { background:#FBF7EF; }
+
+.lp-features { display:grid; grid-template-columns:repeat(4,1fr); gap:1px; background:#E4D9C7; border:1px solid #E4D9C7; border-radius:12px; overflow:hidden; }
+.lp-feature { background:#FBF7EF; padding:26px 22px; }
+.lp-feature-mark { font-family:'Fraunces',Georgia,serif; font-size:13px; color:#B5946A; margin-bottom:14px; letter-spacing:1px; }
+.lp-feature h3 { font-size:16px; font-weight:700; color:#241334; margin-bottom:8px; }
+.lp-feature p { font-size:13.5px; color:#6B5C4A; line-height:1.55; }
+
+.lp-ledger { display:grid; grid-template-columns:repeat(3,1fr); gap:28px; }
+.lp-ledger-item { padding-top:18px; border-top:3px solid #6C3483; }
+.lp-ledger-item h3 { font-size:17px; font-weight:700; color:#241334; margin-bottom:8px; }
+.lp-ledger-item p { font-size:13.5px; color:#6B5C4A; line-height:1.6; }
+
+.lp-cta-band { background:linear-gradient(120deg,#4A235A,#241334); color:#F4ECE0; padding:60px 24px; text-align:center; }
+.lp-cta-band h2 { font-family:'Fraunces',Georgia,serif; font-size:28px; font-weight:600; margin-bottom:12px; }
+.lp-cta-band p { color:#D8C9E6; margin-bottom:26px; font-size:15px; }
+.lp-cta-band .lp-hero-ctas { justify-content:center; }
+
+.lp-footer { background:#1A0F26; color:#A98FC2; text-align:center; padding:24px; font-size:12.5px; }
+
+@media(max-width:860px) {
+  .lp-hero-grid { grid-template-columns:1fr; }
+  .lp-report-card { transform:none; max-width:380px; }
+  .lp-hero h1 { font-size:34px; }
+  .lp-features { grid-template-columns:repeat(2,1fr); }
+  .lp-ledger { grid-template-columns:1fr; gap:30px; }
+  .lp-topbar { flex-wrap:wrap; }
+}
+@media(max-width:480px) {
+  .lp-features { grid-template-columns:1fr; }
+  .lp-topbar-actions .lp-btn span.lp-btn-full-label { display:none; }
+}
+
+/* Landing-triggered auth panels (Login / Sign Up) reuse app styling but float above landing */
+.lp-auth-overlay { position:fixed; inset:0; background:rgba(20,10,30,0.72); z-index:10500; display:flex; align-items:center; justify-content:center; padding:20px; }
+.lp-auth-box { background:var(--bg-card); border-radius:16px; padding:36px; max-width:420px; width:100%; box-shadow:0 25px 70px rgba(0,0,0,0.4); max-height:90vh; overflow-y:auto; }
+.lp-auth-box h2 { font-family:'Fraunces',Georgia,serif; color:var(--primary); margin-bottom:6px; font-size:24px; }
+.lp-auth-box .lp-auth-sub { color:var(--text-light); font-size:13px; margin-bottom:22px; }
+.lp-auth-box label { display:block; font-weight:600; margin:12px 0 4px; font-size:13px; }
+.lp-auth-box input,.lp-auth-box select { width:100%; }
+.lp-auth-switch { text-align:center; margin-top:16px; font-size:13px; color:var(--text-light); }
+.lp-auth-switch a { color:var(--primary); font-weight:600; cursor:pointer; text-decoration:none; }
+.lp-auth-close { position:absolute; top:14px; right:18px; font-size:22px; color:var(--text-light); cursor:pointer; background:none; border:none; line-height:1; }
+.lp-auth-box-wrap { position:relative; }
 
 /* App Layout */
 #appContainer { display:none; }
@@ -191,11 +283,159 @@ tr:hover td { background:rgba(108,52,131,0.04); }
 </head>
 <body>
 
+<!-- Landing / Marketing Page -->
+<div id="landingPage" style="display:none">
+
+  <div class="lp-hero">
+    <div class="lp-hero-inner">
+      <div class="lp-topbar">
+        <div class="lp-brand">
+          <div class="lp-stamp" style="width:46px;height:46px;border-width:2px;transform:rotate(-6deg)">
+            <span class="lp-stamp-mark" style="font-size:18px">EG</span>
+          </div>
+          <div class="lp-brand-name">School Pro
+            <small>School Administration</small>
+          </div>
+        </div>
+        <div class="lp-topbar-actions">
+          <button class="lp-btn lp-btn-ghost" onclick="openLandingAuth('login')">Log In</button>
+          <button class="lp-btn lp-btn-gold" onclick="openLandingAuth('signup')"><span class="lp-btn-full-label">Get Started —</span> Sign Up</button>
+        </div>
+      </div>
+
+      <div class="lp-hero-grid">
+        <div>
+          <span class="lp-eyebrow">Built for Zambian schools</span>
+          <h1 class="lp-font">The whole school office, <em>in one register.</em></h1>
+          <p class="lp-hero-sub">Attendance, exams, fees and conduct — recorded once, never re-typed. School Pro runs offline in the classroom and syncs to the cloud the moment you're back online.</p>
+          <div class="lp-hero-ctas">
+            <button class="lp-btn lp-btn-gold" onclick="openLandingAuth('signup')">Set Up Your School</button>
+            <button class="lp-btn lp-btn-ghost" onclick="openLandingAuth('login')">Log In to Existing School</button>
+          </div>
+          <p class="lp-trust">No card required · PIN-protected · Works without internet</p>
+        </div>
+        <div>
+          <div class="lp-report-card">
+            <div class="lp-report-card-head">
+              <h4>Term 1 Report — Grade 9A</h4>
+              <span>EDUGENIUS</span>
+            </div>
+            <div class="lp-rc-row"><span>Mathematics</span><span class="lp-rc-grade">A</span></div>
+            <div class="lp-rc-row"><span>English</span><span class="lp-rc-grade">B</span></div>
+            <div class="lp-rc-row"><span>Science</span><span class="lp-rc-grade">A</span></div>
+            <div class="lp-rc-row"><span>Attendance</span><span class="lp-rc-grade">96%</span></div>
+            <div class="lp-rc-row"><span>Fees</span><span class="lp-rc-grade">Paid</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="lp-section lp-light">
+    <div class="lp-section-head">
+      <div class="lp-section-eyebrow">Everything the office already does on paper</div>
+      <h2 class="lp-font">Four registers. One source of truth.</h2>
+    </div>
+    <div class="lp-features">
+      <div class="lp-feature">
+        <div class="lp-font lp-feature-mark">Register</div>
+        <h3>Student Records</h3>
+        <p>Enrol students once, grouped by grade — photos, contacts and history all in one place.</p>
+      </div>
+      <div class="lp-feature">
+        <div class="lp-font lp-feature-mark">Exams</div>
+        <h3>Assessments & Marks</h3>
+        <p>CA1, CA2 and final marks weighted automatically into grades and class rankings.</p>
+      </div>
+      <div class="lp-feature">
+        <div class="lp-font lp-feature-mark">Finance</div>
+        <h3>Fees & Payments</h3>
+        <p>Track who's paid, who's owing, and who's on a payment plan — by class or by term.</p>
+      </div>
+      <div class="lp-feature">
+        <div class="lp-font lp-feature-mark">Conduct</div>
+        <h3>Attendance & Discipline</h3>
+        <p>Daily attendance and conduct notes, visible to the right staff and nobody else.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="lp-section">
+    <div class="lp-section-head">
+      <div class="lp-section-eyebrow">Why head teachers choose School Pro</div>
+      <h2 class="lp-font">Made for the realities of running a school here.</h2>
+    </div>
+    <div class="lp-ledger">
+      <div class="lp-ledger-item">
+        <h3>Works without power or signal</h3>
+        <p>Every record is saved on the device first. When the connection returns, it quietly syncs — nothing is lost in the meantime.</p>
+      </div>
+      <div class="lp-ledger-item">
+        <h3>Roles, not one shared password</h3>
+        <p>Head teachers, teachers, bursars and parents each see only what's relevant to them, locked behind their own PIN.</p>
+      </div>
+      <div class="lp-ledger-item">
+        <h3>An audit trail for every change</h3>
+        <p>Every edit to marks, fees or records is logged, so you always know who changed what, and when.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="lp-cta-band">
+    <h2 class="lp-font">Ready to put your school's office online?</h2>
+    <p>Set up your school in under five minutes. No training required.</p>
+    <div class="lp-hero-ctas">
+      <button class="lp-btn lp-btn-gold" onclick="openLandingAuth('signup')">Set Up Your School</button>
+      <button class="lp-btn lp-btn-ghost" onclick="openLandingAuth('login')">Log In</button>
+    </div>
+  </div>
+
+  <div class="lp-footer">School Pro Ultimate · Built for schools across Zambia<br><span style="opacity:0.6">© NEXLITE DIGITAL SOLUTIONS LIMITED</span></div>
+</div>
+
+<!-- Landing Auth Overlay: Login -->
+<div class="lp-auth-overlay" id="lpLoginOverlay" style="display:none">
+  <div class="lp-auth-box-wrap">
+    <div class="lp-auth-box">
+      <button class="lp-auth-close" onclick="closeLandingAuth('login')">&times;</button>
+      <h2 class="lp-font">Welcome back</h2>
+      <p class="lp-auth-sub">Log in to your school's School Pro account.</p>
+      <label>Email</label>
+      <input id="lpLoginEmail" type="email" placeholder="admin@yourschool.com">
+      <label>Password</label>
+      <input id="lpLoginPass" type="password" placeholder="Password">
+      <button class="lp-btn lp-btn-gold lp-btn-block" style="margin-top:16px" onclick="loginFromLanding()">Log In</button>
+      <div class="lp-auth-switch">New school? <a onclick="switchLandingAuth('signup')">Sign up instead</a></div>
+    </div>
+  </div>
+</div>
+
+<!-- Landing Auth Overlay: Sign Up (school + admin setup) -->
+<div class="lp-auth-overlay" id="lpSignupOverlay" style="display:none">
+  <div class="lp-auth-box-wrap">
+    <div class="lp-auth-box">
+      <button class="lp-auth-close" onclick="closeLandingAuth('signup')">&times;</button>
+      <h2 class="lp-font">Set up your school</h2>
+      <p class="lp-auth-sub">Creates your school's workspace and your Super Admin login.</p>
+      <label>School Name</label>
+      <input id="lpSchoolName" placeholder="e.g. Lusaka Academy">
+      <label>Email</label>
+      <input id="lpAdminEmail" type="email" placeholder="admin@yourschool.com">
+      <label>Admin Username</label>
+      <input id="lpAdminUser" placeholder="Choose a username">
+      <label>Admin Password</label>
+      <input id="lpAdminPass" type="password" placeholder="Choose a password (min 6 chars)">
+      <button class="lp-btn lp-btn-gold lp-btn-block" style="margin-top:16px" onclick="signupFromLanding()">Create School Account</button>
+      <div class="lp-auth-switch">Already set up? <a onclick="switchLandingAuth('login')">Log in instead</a></div>
+    </div>
+  </div>
+</div>
+
 <!-- Lock Screen -->
 <div id="lockScreen" style="display:none">
   <div class="lock-box">
     <div style="font-size:48px;margin-bottom:12px">🎓</div>
-    <h1>EduGenius Pro</h1>
+    <h1>School Pro</h1>
     <p>Enter your PIN to continue</p>
     <input type="password" class="pin-input" id="lockPinInput" maxlength="6" placeholder="••••" autocomplete="off">
     <br>
@@ -208,7 +448,7 @@ tr:hover td { background:rgba(108,52,131,0.04); }
 <div id="setupWizard" style="display:none">
   <div class="wizard-box">
     <div style="font-size:48px;margin-bottom:8px">🎓</div>
-    <h2>Welcome to EduGenius Pro</h2>
+    <h2>Welcome to School Pro</h2>
     <p style="color:var(--text-light);margin-bottom:20px">Let's set up your school. Fill in the details below.</p>
     <label>School Name</label>
     <input type="text" id="wizSchoolName" placeholder="e.g. Lusaka Academy">
@@ -229,7 +469,7 @@ tr:hover td { background:rgba(108,52,131,0.04); }
   <div class="app-layout">
     <!-- Sidebar -->
     <nav class="sidebar" id="sidebar">
-      <div class="sidebar-logo">🎓 <span>EduGenius</span> Pro</div>
+      <div class="sidebar-logo">🎓 <span>School Pro</span> Pro</div>
       <div class="nav-item active" onclick="showSection('dashboard')" data-section="dashboard"><span class="icon">📊</span> Dashboard</div>
       <div class="nav-item" onclick="showSection('database')" data-section="database"><span class="icon">🗃️</span> Database</div>
       <div class="nav-item" onclick="showSection('register')" data-section="register"><span class="icon">➕</span> Register</div>
@@ -247,6 +487,11 @@ tr:hover td { background:rgba(108,52,131,0.04); }
           <span id="darkModeIcon">🌙</span> <span id="darkModeLabel">Dark Mode</span>
         </div>
         <div style="margin-top:8px;font-size:11px;opacity:0.6" id="sidebarSchoolName"></div>
+        <div id="fbSyncBadge" style="margin-top:8px;font-size:11px;display:flex;align-items:center;gap:4px">⚪ <span style="color:#7F8C8D">Local only</span></div>
+        <div id="subStatusBadge" style="margin-top:6px;font-size:11px;display:flex;align-items:center;gap:4px">⚪ <span style="color:#7F8C8D">No plan</span></div>
+        <div style="margin-top:12px;display:flex;align-items:center;gap:8px;cursor:pointer" onclick="logoutEdu()">
+          <span>🚪</span> <span>Logout</span>
+        </div>
       </div>
     </nav>
 
@@ -502,7 +747,8 @@ tr:hover td { background:rgba(108,52,131,0.04); }
         <div class="card">
           <div class="card-header"><span class="card-title">💾 Data Management</span></div>
           <div style="display:flex;gap:8px;flex-wrap:wrap">
-            <button class="btn btn-info btn-sm" onclick="exportData()">📤 Export All Data</button>
+            <button class="btn btn-info btn-sm" onclick="exportData()">📤 Export Local</button>
+            <button class="btn btn-primary btn-sm" onclick="exportFromCloud()">☁️ Export from Cloud</button>
             <button class="btn btn-warning btn-sm" onclick="document.getElementById('importFile').click()">📥 Import Data</button>
             <input type="file" id="importFile" accept=".json" style="display:none" onchange="importData(event)">
             <button class="btn btn-danger btn-sm" onclick="clearAllData()">🗑️ Clear All Data</button>
@@ -513,6 +759,13 @@ tr:hover td { background:rgba(108,52,131,0.04); }
         <div class="card">
           <div class="card-header"><span class="card-title">🏫 Multi-School</span><button class="btn btn-primary btn-sm" onclick="addSchool()">+ Add School</button></div>
           <div id="schoolsList"></div>
+        </div>
+
+        <!-- Account -->
+        <div class="card">
+          <div class="card-header"><span class="card-title">👤 Account</span></div>
+          <p style="color:var(--text-light);font-size:13px;margin-bottom:12px">Sign out of School Pro on this device.</p>
+          <button class="btn btn-danger btn-sm" onclick="logoutEdu()">🚪 Log Out</button>
         </div>
       </div>
 
@@ -563,9 +816,46 @@ tr:hover td { background:rgba(108,52,131,0.04); }
 <!-- Toast container -->
 <div id="toastContainer"></div>
 
+<!-- ==================== FIREBASE SDK ==================== -->
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-app.js";
+  import { getDatabase, ref, set, onValue, get } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-database.js";
+  import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-auth.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyDjCuVE0G5zkQQd0itOmXujj8Jy7m6gPAU",
+    authDomain: "school-pro-ultimate.firebaseapp.com",
+    databaseURL: "https://school-pro-ultimate-default-rtdb.firebaseio.com",
+    projectId: "school-pro-ultimate",
+    storageBucket: "school-pro-ultimate.firebasestorage.app",
+    messagingSenderId: "351105459639",
+    appId: "1:351105459639:web:5a00c805d66c271a71b432"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db  = getDatabase(app);
+  const auth = getAuth(app);
+
+  // ---- Expose to global scope for non-module scripts ----
+  window._fbDb   = db;
+  window._fbAuth = auth;
+  window._fbRef  = ref;
+  window._fbSet  = set;
+  window._fbOnValue = onValue;
+  window._fbGet  = get;
+  window._fbCreateUser = (email, pass) => createUserWithEmailAndPassword(auth, email, pass);
+  window._fbSignIn     = (email, pass) => signInWithEmailAndPassword(auth, email, pass);
+  window._fbSignOut    = ()            => signOut(auth);
+  window._fbOnAuthStateChanged = (cb)  => onAuthStateChanged(auth, cb);
+  window._fbReady = true;
+
+  // Dispatch event so the main script knows Firebase is ready
+  window.dispatchEvent(new Event('firebaseReady'));
+</script>
+
 <script>
 /* ========================================================================
-   EduGenius Pro Ultimate - Complete School Management System
+   School Pro Ultimate - Complete School Management System
    Version 21 - Enhanced with 7 new features
    ======================================================================== */
 
@@ -594,6 +884,11 @@ let approvalCallback = null;
 let undoTimeout = null;
 let undoBarActive = false;
 let regPhotoData = null;
+
+// ==================== FIREBASE SYNC STATE ====================
+let _fbSyncEnabled = false;       // true once Firebase is confirmed ready
+let _fbListenersAttached = false; // prevent duplicate onValue listeners
+let _fbSyncPending = 0;           // count of in-flight writes
 
 // ==================== DEFAULT CONFIG ====================
 function getDefaultConfig() {
@@ -629,18 +924,180 @@ function getDefaultConfig() {
 }
 
 // ==================== DATA PERSISTENCE ====================
+
+// --- Internal helpers ---
+function _fbWrite(path, data) {
+  if (!_fbSyncEnabled || !window._fbDb) return;
+  _fbSyncPending++;
+  _fbUpdateSyncBadge('syncing');
+  const r = window._fbRef(window._fbDb, path);
+  window._fbSet(r, data)
+    .then(() => {
+      _fbSyncPending = Math.max(0, _fbSyncPending - 1);
+      if (_fbSyncPending === 0) _fbUpdateSyncBadge('live');
+    })
+    .catch(err => {
+      _fbSyncPending = Math.max(0, _fbSyncPending - 1);
+      _fbUpdateSyncBadge('error');
+      console.error('Firebase write error:', err);
+    });
+}
+
+// ==================== FIREBASE PATH HELPERS (Step 7) ====================
+function _fbSchoolPath() {
+  // Use the authenticated Firebase UID as the schoolId — globally unique, unforgeable
+  const uid = (window._fbAuth && window._fbAuth.currentUser) ? window._fbAuth.currentUser.uid : null;
+  if (uid) return 'schools/' + uid;
+  // Fallback to config.currentSchool while auth is still loading
+  const schoolId = (config && config.currentSchool) ? config.currentSchool : 'default';
+  return 'schools/' + schoolId;
+}
+
+function _fbDetachListeners() {
+  // Re-flag so next attachFirebaseListeners() re-registers for new school path
+  _fbListenersAttached = false;
+}
+
+function _fbUpdateSyncBadge(state) {
+  const badge = document.getElementById('fbSyncBadge');
+  if (!badge) return;
+  const states = {
+    live:     { icon: '🟢', text: 'Synced',   color: '#27AE60' },
+    syncing:  { icon: '🟡', text: 'Syncing…', color: '#F39C12' },
+    offline:  { icon: '🔴', text: 'Offline',  color: '#E74C3C' },
+    error:    { icon: '🔴', text: 'Sync error',color: '#E74C3C' },
+    disabled: { icon: '⚪', text: 'Local only',color: '#7F8C8D' }
+  };
+  const s = states[state] || states.disabled;
+  badge.innerHTML = `${s.icon} <span style="color:${s.color}">${s.text}</span>`;
+}
+
+// --- Public save functions (localStorage + Firebase mirror) ---
 function saveConfig() {
-  try { localStorage.setItem(CONFIG_KEY, JSON.stringify(config)); } catch(e) { showToast('Storage error','error'); }
+  try {
+    localStorage.setItem(CONFIG_KEY, JSON.stringify(config));
+    // Strip PINs before sending to Firebase
+    const safeCfg = Object.assign({}, config);
+    delete safeCfg.appPin;
+    delete safeCfg.headTeacherPin;
+    delete safeCfg.masterPin;
+    safeCfg._lastModified = Date.now();
+    _fbWrite(_fbSchoolPath() + '/config', safeCfg);
+  } catch(e) { showToast('Storage error','error'); }
 }
+
 function saveStudents() {
-  try { localStorage.setItem(DB_KEY, JSON.stringify(students)); } catch(e) { showToast('Storage error','error'); }
+  try {
+    localStorage.setItem(DB_KEY, JSON.stringify(students));
+    // Convert array to object keyed by index for RTDB
+    const studentsObj = {};
+    students.forEach((s, i) => {
+      // Strip large base64 photos to keep writes lean
+      const lean = Object.assign({}, s);
+      if (lean.photo && lean.photo.length > 500) lean.photo = '__photo__';
+      studentsObj['s' + i] = lean;
+    });
+    studentsObj._count = students.length;
+    studentsObj._lastModified = Date.now();
+    _fbWrite(_fbSchoolPath() + '/students', studentsObj);
+  } catch(e) { showToast('Storage error','error'); }
 }
+
 function saveUndoData() {
+  // Undo stacks are local-only — no value syncing to Firebase
   try { localStorage.setItem(UNDO_KEY, JSON.stringify({ undoStack, redoStack })); } catch(e) {}
 }
+
 function saveAlerts() {
-  try { localStorage.setItem(ALERTS_KEY, JSON.stringify(alerts)); } catch(e) {}
+  try {
+    localStorage.setItem(ALERTS_KEY, JSON.stringify(alerts));
+    _fbWrite(_fbSchoolPath() + '/alerts', { list: alerts, _lastModified: Date.now() });
+  } catch(e) {}
 }
+
+// ==================== FIREBASE REAL-TIME LISTENERS ====================
+function attachFirebaseListeners() {
+  if (_fbListenersAttached || !window._fbDb) return;
+  _fbListenersAttached = true;
+
+  const basePath = _fbSchoolPath();
+
+  // --- Config listener ---
+  window._fbOnValue(window._fbRef(window._fbDb, basePath + '/config'), snapshot => {
+    const remote = snapshot.val();
+    if (!remote) return;
+    const localModified = config._lastModified || 0;
+    if (remote._lastModified && remote._lastModified > localModified) {
+      const pins = { appPin: config.appPin, headTeacherPin: config.headTeacherPin, masterPin: config.masterPin };
+      config = Object.assign(config, remote, pins);
+      delete config._lastModified;
+      try { localStorage.setItem(CONFIG_KEY, JSON.stringify(config)); } catch(e) {}
+      refreshCurrentSection();
+    }
+  });
+
+  // --- Students listener ---
+  window._fbOnValue(window._fbRef(window._fbDb, basePath + '/students'), snapshot => {
+    const remote = snapshot.val();
+    if (!remote || !remote._count) return;
+    const localModified = (students._lastModified) || 0;
+    if (remote._lastModified && remote._lastModified > localModified) {
+      const rebuilt = [];
+      for (let i = 0; i < remote._count; i++) {
+        const s = remote['s' + i];
+        if (s) {
+          if (s.photo === '__photo__') {
+            const local = students[i];
+            if (local && local.photo) s.photo = local.photo;
+            else delete s.photo;
+          }
+          rebuilt.push(s);
+        }
+      }
+      students = rebuilt;
+      try { localStorage.setItem(DB_KEY, JSON.stringify(students)); } catch(e) {}
+      refreshCurrentSection();
+    }
+  });
+
+  // --- Alerts listener ---
+  window._fbOnValue(window._fbRef(window._fbDb, basePath + '/alerts'), snapshot => {
+    const remote = snapshot.val();
+    if (!remote || !remote.list) return;
+    alerts = remote.list;
+    try { localStorage.setItem(ALERTS_KEY, JSON.stringify(alerts)); } catch(e) {}
+  });
+
+  _fbUpdateSyncBadge('live');
+}
+
+// Bootstrap Firebase when SDK signals ready
+window.addEventListener('firebaseReady', () => {
+  _fbSyncEnabled = true;
+  // Gate all sync on Firebase Auth — only attach listeners once a user is signed in
+  window._fbOnAuthStateChanged(user => {
+    if (user) {
+      // Signed in — store uid in config so _fbSchoolPath() works immediately
+      if (config) config._fbUid = user.uid;
+      _fbDetachListeners();
+      attachFirebaseListeners();
+      if (typeof _attachUsersListener === 'function') _attachUsersListener();
+      // Seed Firebase with local config on first connect
+      const safeCfg = Object.assign({}, config);
+      delete safeCfg.appPin; delete safeCfg.headTeacherPin; delete safeCfg.masterPin;
+      safeCfg._lastModified = Date.now();
+      _fbWrite(_fbSchoolPath() + '/config', safeCfg);
+    } else {
+      // Signed out — stop syncing
+      _fbDetachListeners();
+      _fbUpdateSyncBadge('disabled');
+    }
+  });
+});
+
+// Detect online/offline for badge
+window.addEventListener('online',  () => { if (_fbSyncEnabled) _fbUpdateSyncBadge('live');    });
+window.addEventListener('offline', () => _fbUpdateSyncBadge('offline'));
 
 // ==================== MIGRATION from v20 ====================
 function migrateV20() {
@@ -1071,6 +1528,8 @@ function showApp() {
   if (window.innerWidth <= 768) { mh.style.display = 'flex'; msn.textContent = config.schoolName; }
   applyDarkMode();
   showSection('dashboard');
+  // Check subscription status on every login
+  setTimeout(() => { if(typeof checkSubscription === 'function') checkSubscription(); }, 800);
 }
 
 // ==================== DASHBOARD ====================
@@ -1218,7 +1677,7 @@ function renderDatabase() {
       }
     });
 
-    html += `</table></div></div></div>`;
+    html += `<tr><td>Premium</td><td>K399/month</td><td>Unlimited Students</td></tr></table></div></div></div>`;
   });
 
   if (filtered.length === 0) {
@@ -1484,6 +1943,13 @@ function registerStudent() {
   if (!name) return showToast('Enter student name','error');
   if (!sex) return showToast('Select sex','error');
   if (!cls) return showToast('Select class','error');
+
+  // Check subscription student limit
+  if (typeof isWithinStudentLimit === 'function' && !isWithinStudentLimit()) {
+    const sub = getSubscription();
+    const tier = sub ? TIERS[sub.tier] : null;
+    return showToast(`Student limit reached (${tier ? tier.students : '?'} on ${sub ? sub.tier : ''} plan). Please upgrade.`, 'error');
+  }
 
   // Collect phones
   const phoneNums = document.querySelectorAll('#regPhones .reg-phone-num');
@@ -2089,6 +2555,7 @@ function savePins() {
   config.appPin = document.getElementById('adminAppPin').value.trim() || config.appPin;
   config.headTeacherPin = document.getElementById('adminHeadPin').value.trim() || config.headTeacherPin;
   config.masterPin = masterPin;
+  delete config._pinsNotSet; // clear first-login prompt flag
   saveConfig();
   showToast('PINs saved');
 }
@@ -2412,7 +2879,9 @@ function addSchool() {
 function switchSchool(key) {
   config.currentSchool = key;
   saveConfig();
-  // Reload students for this school (in a real app, each school has its own data)
+  // Detach old listeners and reattach for the new school's Firebase path
+  _fbDetachListeners();
+  attachFirebaseListeners();
   showToast('Switched to ' + config.schools[key]);
   document.getElementById('sidebarSchoolName').textContent = config.schools[key];
 }
@@ -2434,6 +2903,54 @@ function exportData() {
   a.download = 'edugenius_backup_' + new Date().toISOString().split('T')[0] + '.json';
   a.click();
   showToast('Data exported');
+}
+
+// Step 8 — fetch directly from Firebase regardless of local state (recovery tool)
+async function exportFromCloud() {
+  if (!_fbSyncEnabled || !window._fbDb) {
+    showToast('Firebase not connected', 'error');
+    return;
+  }
+  showToast('Fetching from cloud…', 'info');
+  try {
+    const basePath = _fbSchoolPath();
+    const [cfgSnap, stuSnap, altSnap] = await Promise.all([
+      window._fbGet(window._fbRef(window._fbDb, basePath + '/config')),
+      window._fbGet(window._fbRef(window._fbDb, basePath + '/students')),
+      window._fbGet(window._fbRef(window._fbDb, basePath + '/alerts'))
+    ]);
+    // Config — restore local PINs (never stored in cloud)
+    const cloudConfig = cfgSnap.val() || {};
+    cloudConfig.appPin        = config.appPin;
+    cloudConfig.headTeacherPin = config.headTeacherPin;
+    cloudConfig.masterPin     = config.masterPin;
+    // Students — rebuild array from RTDB keyed object
+    const stuData = stuSnap.val() || {};
+    const cloudStudents = [];
+    for (let i = 0; i < (stuData._count || 0); i++) {
+      if (stuData['s' + i]) cloudStudents.push(stuData['s' + i]);
+    }
+    // Alerts
+    const cloudAlerts = (altSnap.val() || {}).list || [];
+    const payload = {
+      config: cloudConfig,
+      students: cloudStudents,
+      alerts: cloudAlerts,
+      exportDate: new Date().toISOString(),
+      exportSource: 'firebase',
+      school: basePath,
+      version: 21
+    };
+    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'edugenius_cloud_backup_' + new Date().toISOString().split('T')[0] + '.json';
+    a.click();
+    showToast('☁️ Cloud export downloaded (' + cloudStudents.length + ' students)', 'success');
+  } catch (err) {
+    console.error('Cloud export error:', err);
+    showToast('Cloud export failed: ' + err.message, 'error');
+  }
 }
 
 function importData(event) {
@@ -2494,19 +3011,660 @@ document.addEventListener('keydown', function(e) {
   if (e.ctrlKey && e.key === 'y') { e.preventDefault(); redoLastAction(); }
 });
 
-// ==================== INITIALIZATION ====================
-function init() {
-  loadData();
+// ==================== LANDING PAGE ====================
+function showLandingPage(){
+  document.getElementById('landingPage').style.display = 'block';
+}
 
-  if (!config.isSetup) {
-    showSetupWizard();
+function hideLandingPage(){
+  document.getElementById('landingPage').style.display = 'none';
+}
+
+function openLandingAuth(mode){
+  document.getElementById(mode === 'login' ? 'lpLoginOverlay' : 'lpSignupOverlay').style.display = 'flex';
+}
+
+function closeLandingAuth(mode){
+  document.getElementById(mode === 'login' ? 'lpLoginOverlay' : 'lpSignupOverlay').style.display = 'none';
+}
+
+function switchLandingAuth(mode){
+  document.getElementById('lpLoginOverlay').style.display = 'none';
+  document.getElementById('lpSignupOverlay').style.display = 'none';
+  openLandingAuth(mode);
+}
+
+async function loginFromLanding(){
+  const email = document.getElementById('lpLoginEmail').value.trim();
+  const p     = document.getElementById('lpLoginPass').value;
+  if(!email){ showToast('Enter your email address','error'); return; }
+  if(!p){ showToast('Enter your password','error'); return; }
+
+  // 1. Authenticate with Firebase
+  if(!window._fbSignIn){ showToast('Firebase not ready, try again','error'); return; }
+  try {
+    await window._fbSignIn(email, p);
+  } catch(err) {
+    const msg = err.code === 'auth/invalid-credential' || err.code === 'auth/wrong-password'
+      ? 'Invalid email or password'
+      : err.message;
+    showToast(msg, 'error');
     return;
   }
 
-  showLockScreen();
+  // 2. Look up the user record by email — role is resolved automatically
+  const users = JSON.parse(localStorage.getItem('eduGenius_users_v1') || '[]');
+  const candidate = users.find(x => (x.email || '').toLowerCase() === email.toLowerCase());
+
+  if(!candidate){
+    await window._fbSignOut();
+    showToast('No user found for this email on this device','error');
+    return;
+  }
+
+  // Upgrade legacy plaintext password records
+  if(candidate.password && !candidate.passwordHash){
+    const rec = await makePasswordRecord(candidate.password);
+    candidate.passwordHash = rec.passwordHash;
+    candidate.salt = rec.salt;
+    delete candidate.password;
+    if(typeof _saveUsers === 'function') _saveUsers(users);
+    else localStorage.setItem('eduGenius_users_v1', JSON.stringify(users));
+  }
+
+  const match = { username: candidate.username, role: candidate.role };
+  sessionStorage.setItem('eduUser', JSON.stringify(match));
+  currentUser = { username: match.username, role: match.role };
+
+  closeLandingAuth('login');
+  hideLandingPage();
+
+  if(!config.isSetup){
+    showSetupWizard();
+    return;
+  }
+  showApp();
+  if(typeof applyRoleAccess === 'function') applyRoleAccess(match.role);
+}
+
+async function signupFromLanding(){
+  const schoolName = document.getElementById('lpSchoolName').value.trim();
+  const adminEmail = document.getElementById('lpAdminEmail').value.trim();
+  const adminUser  = document.getElementById('lpAdminUser').value.trim();
+  const adminPass  = document.getElementById('lpAdminPass').value;
+
+  if(!schoolName){ showToast('Enter your school name','error'); return; }
+  if(!adminEmail || !adminEmail.includes('@')){ showToast('Enter a valid email address','error'); return; }
+  if(!adminUser){ showToast('Choose an admin username','error'); return; }
+  if(!adminPass || adminPass.length < 6){ showToast('Password must be at least 6 characters','error'); return; }
+
+  // Block duplicate admin usernames on this device
+  const existingUsers = JSON.parse(localStorage.getItem('eduGenius_users_v1') || '[]');
+  if(existingUsers.find(x => x.username.trim().toLowerCase() === adminUser.toLowerCase())){
+    showToast('That username is already taken','error');
+    return;
+  }
+
+  // 1. Create Firebase Auth account
+  if(!window._fbCreateUser){
+    showToast('Firebase not ready, try again','error'); return;
+  }
+  let fbUser;
+  try {
+    const cred = await window._fbCreateUser(adminEmail, adminPass);
+    fbUser = cred.user;
+  } catch(err) {
+    const msg = err.code === 'auth/email-already-in-use'
+      ? 'That email is already registered to a school'
+      : err.message;
+    showToast(msg, 'error');
+    return;
+  }
+
+  // 2. Set up school config — PINs default to 0000, admin prompted to change on first login
+  config.isSetup = true;
+  config.schoolName = schoolName;
+  config.appPin = '0000';
+  config.headTeacherPin = '0000';
+  config.masterPin = '0000';
+  config._pinsNotSet = true; // flag to trigger prompt after login
+  config.currentSchool = fbUser.uid;
+  config.schools = { [fbUser.uid]: schoolName };
+  saveConfig();
+
+  // 3. Seed Super Admin user record
+  const { passwordHash, salt } = await makePasswordRecord(adminPass);
+  const newUsers = existingUsers.concat([{ username: adminUser, passwordHash, salt, role: 'Super Admin', email: adminEmail }]);
+  if(typeof _saveUsers === 'function'){
+    _saveUsers(newUsers);
+  } else {
+    localStorage.setItem('eduGenius_users_v1', JSON.stringify(newUsers));
+    window.eduUsers = newUsers;
+  }
+  if(typeof addAudit === 'function') addAudit('School created, admin user added: ' + adminUser);
+
+  sessionStorage.setItem('eduUser', JSON.stringify({ username: adminUser, role: 'Super Admin' }));
+  currentUser = { username: adminUser, role: 'Super Admin' };
+
+  closeLandingAuth('signup');
+  hideLandingPage();
+  showApp();
+  showToast('Welcome to School Pro! Please set your PINs under Admin → Settings.');
+
+  // Prompt to set PINs immediately
+  setTimeout(() => {
+    if(config._pinsNotSet){
+      if(confirm('Your App, Head Teacher, and Master PINs are currently set to 0000.\n\nGo to Admin → Settings now to change them?')){
+        showSection('admin');
+      }
+    }
+  }, 1200);
+}
+
+// ==================== INITIALIZATION ====================
+function init() {
+  loadData();
+  showLandingPage();
 }
 
 init();
 </script>
+
+<!-- PHASE 1 ROLE MANAGEMENT -->
+<script>
+const USER_KEY='eduGenius_users_v1';
+let currentUser={username:'admin',role:'Super Admin'};
+
+// ==================== PASSWORD HASHING ====================
+// Passwords are never stored in plaintext. Each user record stores
+// {passwordHash, salt} instead of {password}. Hashing uses the browser's
+// built-in SHA-256 (crypto.subtle), so no external library is needed and
+// it works fully offline.
+function generateSalt(){
+  const bytes = new Uint8Array(16);
+  crypto.getRandomValues(bytes);
+  return Array.from(bytes).map(b=>b.toString(16).padStart(2,'0')).join('');
+}
+
+async function hashPassword(password, salt){
+  const enc = new TextEncoder().encode(salt + ':' + password);
+  const digest = await crypto.subtle.digest('SHA-256', enc);
+  return Array.from(new Uint8Array(digest)).map(b=>b.toString(16).padStart(2,'0')).join('');
+}
+
+// Builds a {passwordHash, salt} pair for a new/changed password.
+async function makePasswordRecord(plainPassword){
+  const salt = generateSalt();
+  const passwordHash = await hashPassword(plainPassword, salt);
+  return { passwordHash, salt };
+}
+
+// Checks a plaintext password attempt against a stored user record.
+// Supports legacy records that still have a plaintext `password` field
+// (pre-hashing installs) by upgrading them to hashed form on successful login.
+async function verifyPassword(user, attemptPassword){
+  if(user.passwordHash && user.salt){
+    const attemptHash = await hashPassword(attemptPassword, user.salt);
+    return attemptHash === user.passwordHash;
+  }
+  // Legacy plaintext fallback
+  return user.password === attemptPassword;
+}
+
+function loadUsers(){
+ if(!localStorage.getItem(USER_KEY)){
+   // Default demo accounts. Passwords below are pre-hashed (not plaintext) —
+   // the literal passwords are admin123 / head123 / teacher123 / bursar123,
+   // hashed with the fixed salt 'eg-default-seed-v1' for reproducibility.
+   const defaults=[
+    {username:'admin',passwordHash:'50f97ae909cb31e000effc0cb4626e5e61d560eb158da6ee826ab237b8acec96',salt:'eg-default-seed-v1',role:'Super Admin'},
+    {username:'head',passwordHash:'f9a15b335c4ea17188dc79057d5c566196064e53fcb15ab9e16eee40f0bf50eb',salt:'eg-default-seed-v1',role:'Head Teacher'},
+    {username:'teacher',passwordHash:'a37a43048cceb581d1e2f6d3665471f5e801d5fecee30e97b16b100064e6875e',salt:'eg-default-seed-v1',role:'Teacher'},
+    {username:'bursar',passwordHash:'cba1ece51e073ec51081890ed6c5d9936ac638f50b28437a4e661809a2ce0bb5',salt:'eg-default-seed-v1',role:'Bursar'}
+   ];
+   localStorage.setItem(USER_KEY,JSON.stringify(defaults));
+ }
+ // One-time cleanup: remove duplicate usernames (case-insensitive, trimmed),
+ // keeping the first occurrence of each.
+ let stored=JSON.parse(localStorage.getItem(USER_KEY)||'[]');
+ let seen=new Set();
+ let deduped=stored.filter(u=>{
+   let key=(u.username||'').trim().toLowerCase();
+   if(seen.has(key)) return false;
+   seen.add(key);
+   return true;
+ });
+ if(deduped.length!==stored.length){
+   localStorage.setItem(USER_KEY,JSON.stringify(deduped));
+ }
+ // Keep window.eduUsers in sync with localStorage on boot
+ if(window.eduUsers !== undefined){
+   window.eduUsers = deduped;
+ }
+}
+
+function canAccess(section){
+ const role=currentUser.role;
+ const rules={
+   'Teacher':['dashboard','assessments','attendance','classmarks'],
+   'Bursar':['dashboard','finance','reports'],
+   'Parent':['dashboard','reports'],
+   'Head Teacher':['dashboard','database','register','assessments','classmarks','finance','attendance','conduct','analytics','announcements','reports'],
+   'Super Admin':['*']
+ };
+ if(role==='Super Admin') return true;
+ return (rules[role]||[]).includes(section);
+}
+
+document.addEventListener('DOMContentLoaded',()=>{
+ loadUsers();
+});
+</script>
+
+
+<!-- Phase 1.1 Authentication Upgrade -->
+<style>
+#authLogin{position:fixed;inset:0;background:#f4f4f4;z-index:20000;display:none;align-items:center;justify-content:center}
+.auth-box{background:white;padding:25px;border-radius:12px;width:320px;box-shadow:0 10px 30px rgba(0,0,0,.2)}
+.auth-box input,.auth-box select{width:100%;margin:6px 0;padding:10px}
+</style>
+<div id="authLogin">
+<div class="auth-box">
+<h3>School Pro Login</h3>
+<input id="loginUser" placeholder="Username">
+<input id="loginPass" type="password" placeholder="Password">
+<select id="loginRole">
+<option>Super Admin</option>
+<option>Head Teacher</option>
+<option>Teacher</option>
+<option>Bursar</option>
+<option>Parent</option>
+</select>
+<button onclick="loginEdu()" style="width:100%">Login</button>
+</div>
+</div>
+<script>
+// --- Users: load from localStorage, kept live by Firebase listener ---
+window.eduUsers = JSON.parse(localStorage.getItem('eduGenius_users_v1') || '[]');
+
+// Persist users to localStorage AND Firebase (under the school's own node)
+function _saveUsers(users) {
+  localStorage.setItem('eduGenius_users_v1', JSON.stringify(users));
+  window.eduUsers = users;
+  if (window._fbDb && window._fbSet && window._fbRef && window._fbAuth && window._fbAuth.currentUser) {
+    const usersObj = {};
+    // Never store passwordHash or salt in Firebase
+    users.forEach((u, i) => {
+      usersObj['u' + i] = { username: u.username, role: u.role, email: u.email || '' };
+    });
+    usersObj._count = users.length;
+    usersObj._lastModified = Date.now();
+    window._fbSet(window._fbRef(window._fbDb, _fbSchoolPath() + '/users'), usersObj)
+      .catch(e => console.warn('User Firebase sync error:', e));
+  }
+}
+
+// Attach real-time Firebase listener for users (called once Firebase Auth confirms sign-in)
+function _attachUsersListener() {
+  if (!window._fbDb || !window._fbOnValue || !window._fbRef) return;
+  if (!window._fbAuth || !window._fbAuth.currentUser) return;
+  window._fbOnValue(window._fbRef(window._fbDb, _fbSchoolPath() + '/users'), snapshot => {
+    const remote = snapshot.val();
+    if (!remote || !remote._count) return;
+    const localTs = JSON.parse(localStorage.getItem('_eduUsersTs') || '0');
+    if (remote._lastModified && remote._lastModified > localTs) {
+      // Remote only has username/role/email — merge with local (which has hashes)
+      const local = JSON.parse(localStorage.getItem('eduGenius_users_v1') || '[]');
+      const rebuilt = [];
+      for (let i = 0; i < remote._count; i++) {
+        const r = remote['u' + i];
+        if (!r) continue;
+        const localMatch = local.find(l => l.username === r.username && l.role === r.role);
+        rebuilt.push(localMatch || r);
+      }
+      localStorage.setItem('eduGenius_users_v1', JSON.stringify(rebuilt));
+      localStorage.setItem('_eduUsersTs', String(remote._lastModified));
+      window.eduUsers = rebuilt;
+      if (typeof renderUsersEdu === 'function') renderUsersEdu();
+    }
+  });
+}
+window.addEventListener('firebaseReady', () => {
+  // _attachUsersListener is called from onAuthStateChanged once user is confirmed
+});
+
+async function loginEdu(){
+ let u=document.getElementById('loginUser').value.trim();
+ let p=document.getElementById('loginPass').value;
+ let r=document.getElementById('loginRole').value;
+ let ok=window.eduUsers.find(x=>x.username.trim().toLowerCase()===u.toLowerCase()&&x.role===r);
+ if(ok && await verifyPassword(ok, p)){
+   if(ok.password && !ok.passwordHash){
+     const rec = await makePasswordRecord(ok.password);
+     ok.passwordHash = rec.passwordHash;
+     ok.salt = rec.salt;
+     delete ok.password;
+     if(typeof _saveUsers === 'function') _saveUsers(window.eduUsers);
+   }
+   sessionStorage.setItem('eduUser',JSON.stringify({username:ok.username,role:ok.role}));
+   document.getElementById('authLogin').style.display='none';
+ } else alert('Invalid username, password, or role.');
+}
+async function logoutEdu(){
+  sessionStorage.removeItem('eduUser');
+  if(window._fbSignOut) {
+    try { await window._fbSignOut(); } catch(e) {}
+  }
+  location.reload();
+}
+</script>
+
+<!-- Phase 2 User Management & Audit Logs -->
+<script>
+if(!localStorage.getItem('edu_audit_logs')){
+ localStorage.setItem('edu_audit_logs','[]');
+}
+function addAudit(action){
+ let logs=JSON.parse(localStorage.getItem('edu_audit_logs')||'[]');
+ logs.unshift({action:action,time:new Date().toLocaleString()});
+ localStorage.setItem('edu_audit_logs',JSON.stringify(logs));
+}
+document.addEventListener('DOMContentLoaded',()=>{
+ let admin=document.getElementById('sec-admin');
+ if(admin){
+   let div=document.createElement('div');
+   div.className='card';
+   div.innerHTML=`
+   <h3>👥 User Management</h3>
+   <input id="newUser" placeholder="Username">
+   <input id="newEmail" type="email" placeholder="Email (for login)">
+   <input id="newPass" placeholder="Password">
+   <select id="newRole">
+     <option>Teacher</option>
+     <option>Bursar</option>
+     <option>Head Teacher</option>
+     <option>Parent</option>
+   </select>
+   <button onclick="addUserEdu()">Add User</button>
+   <div id="userListEdu"></div>
+   <hr>
+   <h3>📜 Audit Logs</h3>
+   <div id="auditListEdu"></div>`;
+   admin.prepend(div);
+ }
+ renderUsersEdu();
+ renderAuditEdu();
+});
+
+async function addUserEdu(){
+ let users=JSON.parse(localStorage.getItem('eduGenius_users_v1')||'[]');
+ const newUsername = document.getElementById('newUser').value.trim();
+ const newEmail    = document.getElementById('newEmail').value.trim();
+ const newPassword = document.getElementById('newPass').value;
+ const newRole     = document.getElementById('newRole').value;
+ if(!newUsername || !newPassword){ alert('Username and password required.'); return; }
+ if(!newEmail || !newEmail.includes('@')){ alert('A valid email is required for login.'); return; }
+ if(users.find(x=>x.username.trim().toLowerCase()===newUsername.toLowerCase())){ alert('Username already exists.'); return; }
+ if(users.find(x=>(x.email||'').toLowerCase()===newEmail.toLowerCase())){ alert('Email already in use.'); return; }
+ const { passwordHash, salt } = await makePasswordRecord(newPassword);
+ users.push({ username:newUsername, passwordHash, salt, role:newRole, email:newEmail });
+ _saveUsers(users);
+ addAudit('User added: ' + newUsername);
+ renderUsersEdu();
+ document.getElementById('newUser').value='';
+ document.getElementById('newEmail').value='';
+ document.getElementById('newPass').value='';
+}
+
+function renderUsersEdu(){
+ let users=JSON.parse(localStorage.getItem('eduGenius_users_v1')||'[]');
+ let el=document.getElementById('userListEdu');
+ if(!el) return;
+ el.innerHTML=users.map((u,i)=>
+ '<div>'+u.username+' ('+u.role+') <button onclick="delUserEdu('+i+')">Delete</button></div>'
+ ).join('');
+}
+
+function delUserEdu(i){
+ let users=JSON.parse(localStorage.getItem('eduGenius_users_v1')||'[]');
+ const removed = users[i] ? users[i].username : '?';
+ users.splice(i,1);
+ _saveUsers(users);
+ addAudit('User removed: ' + removed);
+ renderUsersEdu();
+}
+
+function renderAuditEdu(){
+ let logs=JSON.parse(localStorage.getItem('edu_audit_logs')||'[]');
+ let el=document.getElementById('auditListEdu');
+ if(!el) return;
+ el.innerHTML=logs.slice(0,50).map(l=>'<div>'+l.time+' - '+l.action+'</div>').join('');
+}
+</script>
+
+
+<!-- Phase 3 Role Security -->
+<script>
+if(!localStorage.getItem('edu_roles_v1')){
+ localStorage.setItem('edu_roles_v1',JSON.stringify([
+   {username:'admin',role:'Administrator'},
+   {username:'teacher',role:'Teacher'},
+   {username:'bursar',role:'Bursar'}
+ ]));
+}
+
+function applyRoleAccess(role){
+ const rules={
+   'Administrator':['dashboard','database','register','assessments','classmarks','finance','attendance','conduct','analytics','announcements','reports','admin'],
+   'Super Admin':['dashboard','database','register','assessments','classmarks','finance','attendance','conduct','analytics','announcements','reports','admin'],
+   'Head Teacher':['dashboard','database','assessments','classmarks','attendance','conduct','reports','admin'],
+   'Teacher':['dashboard','database','assessments','classmarks','attendance','reports'],
+   'Bursar':['dashboard','database','finance','reports'],
+   'Parent':['dashboard','reports']
+ };
+ let allowed=rules[role]||['dashboard'];
+ document.querySelectorAll('[data-section]').forEach(el=>{
+   let sec=el.getAttribute('data-section');
+   el.style.display=allowed.includes(sec)?'flex':'none';
+ });
+}
+
+document.addEventListener('DOMContentLoaded',()=>{
+ const stored = sessionStorage.getItem('eduUser');
+ const role = stored ? JSON.parse(stored).role : 'Super Admin';
+ applyRoleAccess(role);
+});
+</script>
+
+
+<!-- Cloud Sync Status -->
+<script>
+document.addEventListener('DOMContentLoaded',function(){
+ const admin=document.getElementById('sec-admin');
+ if(admin){
+   const card=document.createElement('div');
+   card.className='card';
+   card.innerHTML=`
+   <div class="card-header"><span class="card-title">☁️ Cloud Sync</span></div>
+   <div id="cloudCenterStatus" style="font-size:13px;color:var(--text-light)">Checking connection…</div>`;
+   admin.prepend(card);
+
+   if(window._fbOnAuthStateChanged){
+     window._fbOnAuthStateChanged(user => {
+       const el = document.getElementById('cloudCenterStatus');
+       if(el) el.innerHTML = user
+         ? `🟢 <strong>Connected</strong> — School ID: <code style="font-size:11px">${user.uid.slice(0,12)}…</code>`
+         : '🔴 Not signed in to cloud';
+     });
+   }
+ }
+});
+</script>
+
+
+<script>
+// ==================== SUBSCRIPTION SYSTEM ====================
+const TIERS = {
+  Starter:  { monthly: 49,  annual: 490,  students: 100  },
+  Basic:    { monthly: 99,  annual: 990,  students: 300  },
+  Standard: { monthly: 199, annual: 1990, students: 1000 }
+};
+
+function getSubscription() {
+  try { return JSON.parse(localStorage.getItem('edu_subscription') || 'null'); } catch(e) { return null; }
+}
+
+function saveSubscription(data) {
+  localStorage.setItem('edu_subscription', JSON.stringify(data));
+}
+
+function checkSubscription() {
+  const sub = getSubscription();
+  const badge = document.getElementById('subStatusBadge');
+
+  if (!sub) {
+    if (badge) badge.innerHTML = '⚠️ <span style="color:#E67E22">No subscription</span>';
+    return;
+  }
+
+  const now = new Date();
+  const expiry = new Date(sub.expiry);
+  const expired = now > expiry;
+  const tier = TIERS[sub.tier];
+  const studentCount = (typeof students !== 'undefined') ? students.length : 0;
+  const overLimit = tier && studentCount > tier.students;
+  const daysLeft = Math.ceil((expiry - now) / (1000 * 60 * 60 * 24));
+
+  if (expired) {
+    if (badge) badge.innerHTML = '🔴 <span style="color:#E74C3C">Expired</span>';
+    showToast('⚠️ Your subscription has expired. Please renew to continue.', 'error');
+  } else if (overLimit) {
+    if (badge) badge.innerHTML = `🟡 <span style="color:#E67E22">${sub.tier} — Over limit</span>`;
+    showToast(`⚠️ Student count (${studentCount}) exceeds your ${sub.tier} plan limit (${tier.students}). Please upgrade.`, 'error');
+  } else if (daysLeft <= 7) {
+    if (badge) badge.innerHTML = `🟡 <span style="color:#E67E22">${sub.tier} — ${daysLeft}d left</span>`;
+  } else {
+    if (badge) badge.innerHTML = `🟢 <span style="color:#27AE60">${sub.tier}</span>`;
+  }
+}
+
+function isWithinStudentLimit() {
+  const sub = getSubscription();
+  if (!sub) return true; // no sub = allow during trial
+  const tier = TIERS[sub.tier];
+  if (!tier) return true;
+  const count = (typeof students !== 'undefined') ? students.length : 0;
+  return count < tier.students;
+}
+
+function activateSubscription() {
+  const tier    = document.getElementById('subTier').value;
+  const cycle   = document.getElementById('billingCycle').value;
+  const isAnnual = cycle === 'Annual';
+  const price   = isAnnual ? TIERS[tier].annual : TIERS[tier].monthly;
+
+  const expiry = new Date();
+  if (isAnnual) expiry.setFullYear(expiry.getFullYear() + 1);
+  else expiry.setMonth(expiry.getMonth() + 1);
+
+  const data = { tier, cycle, price, expiry: expiry.toISOString(), activated: new Date().toISOString() };
+  saveSubscription(data);
+  renderSubscriptionStatus();
+  checkSubscription();
+  showToast(`✅ ${tier} plan activated (${cycle})`);
+}
+
+function renderSubscriptionStatus() {
+  const el = document.getElementById('subscriptionStatus');
+  if (!el) return;
+  const sub = getSubscription();
+  if (!sub) {
+    el.innerHTML = '<span style="color:#E67E22">No active subscription — 1 month free trial active.</span>';
+    return;
+  }
+  const expiry = new Date(sub.expiry);
+  const expired = new Date() > expiry;
+  const tier = TIERS[sub.tier] || {};
+  el.innerHTML = `
+    <div style="padding:12px;background:var(--bg-main);border-radius:8px;margin-top:8px">
+      <div><strong>Plan:</strong> ${sub.tier} (${sub.cycle})</div>
+      <div><strong>Student Limit:</strong> ${tier.students ? tier.students.toLocaleString() : '—'}</div>
+      <div><strong>Price:</strong> K${sub.price ? sub.price.toLocaleString() : '—'}</div>
+      <div><strong>Expires:</strong> ${expiry.toLocaleDateString()} ${expired ? '<span style="color:#E74C3C">— EXPIRED</span>' : ''}</div>
+    </div>`;
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+  const admin = document.getElementById('sec-admin');
+  if (!admin) return;
+
+  const card = document.createElement('div');
+  card.className = 'card';
+  card.innerHTML = `
+    <div class="card-header"><span class="card-title">💳 Subscription</span></div>
+
+    <div style="overflow-x:auto;margin-bottom:16px">
+      <table style="width:100%;border-collapse:collapse;font-size:13px">
+        <thead>
+          <tr style="background:var(--primary);color:#fff">
+            <th style="padding:8px 12px;text-align:left">Tier</th>
+            <th style="padding:8px 12px;text-align:right">Monthly</th>
+            <th style="padding:8px 12px;text-align:right">Annual</th>
+            <th style="padding:8px 12px;text-align:right">Students</th>
+            <th style="padding:8px 12px;text-align:right">Saving</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr style="border-bottom:1px solid var(--border)">
+            <td style="padding:8px 12px"><strong>Starter</strong></td>
+            <td style="padding:8px 12px;text-align:right">K49/mo</td>
+            <td style="padding:8px 12px;text-align:right">K490/yr</td>
+            <td style="padding:8px 12px;text-align:right">Up to 100</td>
+            <td style="padding:8px 12px;text-align:right;color:#27AE60">Save K98</td>
+          </tr>
+          <tr style="border-bottom:1px solid var(--border)">
+            <td style="padding:8px 12px"><strong>Basic</strong></td>
+            <td style="padding:8px 12px;text-align:right">K99/mo</td>
+            <td style="padding:8px 12px;text-align:right">K990/yr</td>
+            <td style="padding:8px 12px;text-align:right">Up to 300</td>
+            <td style="padding:8px 12px;text-align:right;color:#27AE60">Save K198</td>
+          </tr>
+          <tr>
+            <td style="padding:8px 12px"><strong>Standard</strong></td>
+            <td style="padding:8px 12px;text-align:right">K199/mo</td>
+            <td style="padding:8px 12px;text-align:right">K1,990/yr</td>
+            <td style="padding:8px 12px;text-align:right">Up to 1,000</td>
+            <td style="padding:8px 12px;text-align:right;color:#27AE60">Save K398</td>
+          </tr>
+        </tbody>
+      </table>
+      <p style="font-size:12px;color:var(--text-light);margin-top:6px">All new schools receive a 1-month free trial.</p>
+    </div>
+
+    <div class="form-row">
+      <div class="form-group">
+        <label>Plan</label>
+        <select id="subTier">
+          <option>Starter</option>
+          <option>Basic</option>
+          <option>Standard</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Billing Cycle</label>
+        <select id="billingCycle">
+          <option>Monthly</option>
+          <option>Annual</option>
+        </select>
+      </div>
+    </div>
+    <button class="btn btn-success btn-sm" onclick="activateSubscription()">Activate Plan</button>
+    <div id="subscriptionStatus" style="margin-top:12px"></div>`;
+
+  admin.prepend(card);
+  renderSubscriptionStatus();
+});
+</script>
+
 </body>
 </html>
