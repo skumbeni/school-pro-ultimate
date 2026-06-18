@@ -981,112 +981,6 @@ const OLD_ALERTS_KEY = 'eduGenius_Alerts_v20';
 const MAX_UNDO = 30;
 const UNDO_TIMEOUT = 60000; // 60 seconds
 
-// ==================== V15: LOCALSTORAGE ENCRYPTION (AES-GCM) ====================
-// All sensitive keys are encrypted with AES-256-GCM before being written to
-// localStorage. The encryption key (_lsek) is a random 256-bit value stored
-// in a dedicated localStorage entry. This ensures that a successful XSS payload
-// which exfiltrates individual data keys (DB, Config, Users, etc.) only obtains
-// ciphertext — decryption requires the _lsek key to also be stolen. The attacker
-// must exfiltrate ALL localStorage entries to be able to decrypt, and even then
-// the data is siloed per-origin and per-device.
-//
-// Encrypted envelope format (stored as a JSON string):
-//   { v: 1, iv: "<hex>", ct: "<hex>" }
-//
-// Keys that are encrypted: CONFIG_KEY, DB_KEY, UNDO_KEY, ALERTS_KEY,
-//   'eduGenius_users_v1', 'edu_audit_logs'
-// Keys intentionally NOT encrypted: _lsek, _eduUsersTs, edu_subscription
-//   (non-sensitive or explicitly the key material itself)
-
-const _LSEK_KEY = '_lsek'; // the key that stores our AES-GCM secret
-const _ENCRYPTED_KEYS = new Set([
-  'eduGenius_Config_v21',
-  'eduGenius_DB_v21',
-  'eduGenius_Undo_v21',
-  'eduGenius_Alerts_v21',
-  'eduGenius_Config_v20',
-  'eduGenius_DB_v20',
-  'eduGenius_Undo_v20',
-  'eduGenius_Alerts_v20',
-  'eduGenius_users_v1',
-  'edu_audit_logs',
-]);
-
-let _lsAesKey = null; // resolved CryptoKey, cached after first use
-
-function _hexToBytes(hex) {
-  const arr = new Uint8Array(hex.length / 2);
-  for (let i = 0; i < arr.length; i++) arr[i] = parseInt(hex.slice(i * 2, i * 2 + 2), 16);
-  return arr;
-}
-function _bytesToHex(buf) {
-  return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
-}
-
-async function _getLsKey() {
-  if (_lsAesKey) return _lsAesKey;
-  let rawHex = localStorage.getItem(_LSEK_KEY);
-  if (!rawHex || rawHex.length !== 64) {
-    // Generate a new 256-bit key and persist it
-    const raw = new Uint8Array(32);
-    crypto.getRandomValues(raw);
-    rawHex = _bytesToHex(raw);
-    localStorage.setItem(_LSEK_KEY, rawHex);
-  }
-  _lsAesKey = await crypto.subtle.importKey(
-    'raw', _hexToBytes(rawHex), { name: 'AES-GCM' }, false, ['encrypt', 'decrypt']
-  );
-  return _lsAesKey;
-}
-
-// Synchronous wrapper — queues a micro-task to persist; returns immediately
-// so callers don't need to be async (matches existing save* call sites).
-function lsSet(key, value) {
-  if (!_ENCRYPTED_KEYS.has(key)) {
-    localStorage.setItem(key, value);
-    return;
-  }
-  (async () => {
-    try {
-      const k = await _getLsKey();
-      const iv = new Uint8Array(12);
-      crypto.getRandomValues(iv);
-      const enc = new TextEncoder().encode(value);
-      const ct = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, k, enc);
-      const envelope = JSON.stringify({ v: 1, iv: _bytesToHex(iv), ct: _bytesToHex(ct) });
-      localStorage.setItem(key, envelope);
-    } catch (e) {
-      // Encryption failure: fall back to plaintext so data isn't lost
-      console.error('[lsSet] encrypt error, storing plaintext:', e);
-      localStorage.setItem(key, value);
-    }
-  })();
-}
-
-// Async read — returns decrypted string, or plaintext string for legacy/unencrypted items
-async function lsGet(key) {
-  const raw = localStorage.getItem(key);
-  if (!raw) return null;
-  if (!_ENCRYPTED_KEYS.has(key)) return raw;
-  // Detect encrypted envelope
-  if (raw.startsWith('{"v":1,') || raw.startsWith('{ "v": 1,')) {
-    try {
-      const env = JSON.parse(raw);
-      if (env.v !== 1 || !env.iv || !env.ct) return raw; // malformed — treat as plaintext
-      const k = await _getLsKey();
-      const pt = await crypto.subtle.decrypt(
-        { name: 'AES-GCM', iv: _hexToBytes(env.iv) }, k, _hexToBytes(env.ct)
-      );
-      return new TextDecoder().decode(pt);
-    } catch (e) {
-      console.error('[lsGet] decrypt error:', e);
-      return null; // corrupt or wrong key — signal missing data
-    }
-  }
-  // Legacy plaintext — return as-is; will be re-saved encrypted on next write
-  return raw;
-}
-
 // ==================== PIN HASHING ====================
 async function hashPin(pin) {
   const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(pin));
@@ -1253,7 +1147,7 @@ function _fbUpdateSyncBadge(state) {
 // --- Public save functions (localStorage + Firebase mirror) ---
 function saveConfig() {
   try {
-    lsSet(CONFIG_KEY, JSON.stringify(config));
+    localStorage.setItem(CONFIG_KEY, JSON.stringify(config));
     // Strip PINs before sending to Firebase
     const safeCfg = Object.assign({}, config);
     delete safeCfg.appPin;
@@ -1272,7 +1166,7 @@ function saveStudents(changedIdx) {
   // When provided, only that student's node is patched — much leaner than
   // a full array rewrite. Metadata (_count, _lastModified) is always updated.
   try {
-    lsSet(DB_KEY, JSON.stringify(students));
+    localStorage.setItem(DB_KEY, JSON.stringify(students));
     if (!_fbSyncEnabled || !window._fbDb) return;
 
     const basePath = _fbSchoolPath() + '/students';
@@ -1305,12 +1199,12 @@ function saveStudents(changedIdx) {
 
 function saveUndoData() {
   // Undo stacks are local-only — no value syncing to Firebase
-  try { lsSet(UNDO_KEY, JSON.stringify({ undoStack, redoStack })); } catch(e) {}
+  try { localStorage.setItem(UNDO_KEY, JSON.stringify({ undoStack, redoStack })); } catch(e) {}
 }
 
 function saveAlerts() {
   try {
-    lsSet(ALERTS_KEY, JSON.stringify(alerts));
+    localStorage.setItem(ALERTS_KEY, JSON.stringify(alerts));
     _fbWrite(_fbSchoolPath() + '/alerts', { list: alerts, _lastModified: Date.now() });
   } catch(e) {}
 }
@@ -1331,7 +1225,7 @@ function attachFirebaseListeners() {
       const pins = { appPin: config.appPin, headTeacherPin: config.headTeacherPin, masterPin: config.masterPin };
       config = Object.assign(config, remote, pins);
       delete config._lastModified;
-      try { lsSet(CONFIG_KEY, JSON.stringify(config)); } catch(e) {}
+      try { localStorage.setItem(CONFIG_KEY, JSON.stringify(config)); } catch(e) {}
       refreshCurrentSection();
     }
   });
@@ -1355,7 +1249,7 @@ function attachFirebaseListeners() {
         }
       }
       students = rebuilt;
-      try { lsSet(DB_KEY, JSON.stringify(students)); } catch(e) {}
+      try { localStorage.setItem(DB_KEY, JSON.stringify(students)); } catch(e) {}
       refreshCurrentSection();
     }
   });
@@ -1365,7 +1259,7 @@ function attachFirebaseListeners() {
     const remote = snapshot.val();
     if (!remote || !remote.list) return;
     alerts = remote.list;
-    try { lsSet(ALERTS_KEY, JSON.stringify(alerts)); } catch(e) {}
+    try { localStorage.setItem(ALERTS_KEY, JSON.stringify(alerts)); } catch(e) {}
   });
 
   // --- Subscription listener (operator pushes from admin panel) ---
@@ -1475,7 +1369,7 @@ function migrateV20() {
       // Build default fee structure
       newCfg.feeStructure = { categories: [{name:'School Fees',amount:5000},{name:'Food',amount:1500},{name:'Boarding',amount:2000},{name:'Exam Fees',amount:500}], perClass:{} };
 
-      lsSet(CONFIG_KEY, JSON.stringify(newCfg));
+      localStorage.setItem(CONFIG_KEY, JSON.stringify(newCfg));
     } catch(e) { console.error('Config migration error', e); }
   }
 
@@ -1484,7 +1378,7 @@ function migrateV20() {
     try {
       const oldStudents = JSON.parse(localStorage.getItem(OLD_DB_KEY));
       const migrated = oldStudents.map(s => migrateStudent(s));
-      lsSet(DB_KEY, JSON.stringify(migrated));
+      localStorage.setItem(DB_KEY, JSON.stringify(migrated));
     } catch(e) { console.error('Student migration error', e); }
   }
 
@@ -1493,14 +1387,14 @@ function migrateV20() {
     try {
       const oldUndo = JSON.parse(localStorage.getItem(OLD_UNDO_KEY));
       const newUndo = Array.isArray(oldUndo) ? oldUndo.map(s => migrateStudent(s)) : [];
-      lsSet(UNDO_KEY, JSON.stringify({ undoStack: newUndo, redoStack: [] }));
+      localStorage.setItem(UNDO_KEY, JSON.stringify({ undoStack: newUndo, redoStack: [] }));
     } catch(e) {}
   }
 
   // Migrate alerts
   if (!localStorage.getItem(ALERTS_KEY) && localStorage.getItem(OLD_ALERTS_KEY)) {
     try {
-      lsSet(ALERTS_KEY, localStorage.getItem(OLD_ALERTS_KEY));
+      localStorage.setItem(ALERTS_KEY, localStorage.getItem(OLD_ALERTS_KEY));
     } catch(e) {}
   }
 }
@@ -1529,10 +1423,10 @@ function migrateStudent(s) {
 }
 
 // ==================== LOAD DATA ====================
-async function loadData() {
+function loadData() {
   migrateV20();
   try {
-    const cfgRaw = await lsGet(CONFIG_KEY);
+    const cfgRaw = localStorage.getItem(CONFIG_KEY);
     config = cfgRaw ? JSON.parse(cfgRaw) : getDefaultConfig();
     // Ensure all new fields exist
     if (!config.grades) config.grades = getDefaultConfig().grades;
@@ -1548,18 +1442,18 @@ async function loadData() {
     });
     if (pinsToMigrate.length > 0) {
       Promise.all(pinsToMigrate.map(k => storePin(config[k]).then(h => { config[k] = h; }))).then(() => {
-        try { lsSet(CONFIG_KEY, JSON.stringify(config)); } catch(e) {}
+        try { localStorage.setItem(CONFIG_KEY, JSON.stringify(config)); } catch(e) {}
       });
     }
   } catch(e) { config = getDefaultConfig(); }
 
   try {
-    const dbRaw = await lsGet(DB_KEY);
+    const dbRaw = localStorage.getItem(DB_KEY);
     students = dbRaw ? JSON.parse(dbRaw).map(s => migrateStudent(s)) : [];
   } catch(e) { students = []; }
 
   try {
-    const undoRaw = await lsGet(UNDO_KEY);
+    const undoRaw = localStorage.getItem(UNDO_KEY);
     if (undoRaw) {
       const parsed = JSON.parse(undoRaw);
       undoStack = Array.isArray(parsed.undoStack) ? parsed.undoStack : (Array.isArray(parsed) ? parsed : []);
@@ -1570,7 +1464,7 @@ async function loadData() {
   } catch(e) { undoStack = []; redoStack = []; }
 
   try {
-    const altRaw = await lsGet(ALERTS_KEY);
+    const altRaw = localStorage.getItem(ALERTS_KEY);
     alerts = altRaw ? JSON.parse(altRaw) : [];
   } catch(e) { alerts = []; }
 }
@@ -3519,12 +3413,16 @@ function switchLandingAuth(mode){
 // If it's already ready, resolves immediately.
 function _waitForFirebase() {
   if (window._fbReady) return Promise.resolve();
-  return new Promise(resolve => {
-    // Store resolver so the module script can call it
-    window._fbReadyResolve = resolve;
-    // Also listen for the event in case it fires after this runs
-    window.addEventListener('firebaseReady', resolve, { once: true });
-  });
+  // Use a shared promise so multiple callers don't race on _fbReadyResolve
+  if (!window._fbReadyPromise) {
+    window._fbReadyPromise = new Promise((resolve, reject) => {
+      const timer = setTimeout(() => reject(new Error('Firebase SDK timeout')), 10000);
+      const done = () => { clearTimeout(timer); resolve(); };
+      window._fbReadyResolve = done;
+      window.addEventListener('firebaseReady', done, { once: true });
+    });
+  }
+  return window._fbReadyPromise;
 }
 
 function _setAuthBtn(id, loading, label) {
@@ -3543,7 +3441,12 @@ async function loginFromLanding(){
   _setAuthBtn('lpLoginBtn', true, 'Log In');
   try {
     // 1. Wait for Firebase SDK then sign in
-    await _waitForFirebase();
+    try {
+      await _waitForFirebase();
+    } catch(e) {
+      showToast('Cannot reach server — check your connection and try again.', 'error');
+      return;
+    }
     try {
       await window._fbSignIn(email, p);
     } catch(err) {
@@ -3555,7 +3458,7 @@ async function loginFromLanding(){
     }
 
     // 2. Look up local user record by email
-    const users = JSON.parse((await lsGet('eduGenius_users_v1')) || '[]');
+    const users = JSON.parse(localStorage.getItem('eduGenius_users_v1') || '[]');
     const candidate = users.find(x => (x.email || '').toLowerCase() === email.toLowerCase());
 
     if(!candidate){
@@ -3563,7 +3466,7 @@ async function loginFromLanding(){
       const fbUser = window._fbAuth.currentUser;
       const bootstrapUser = { username: email.split('@')[0], email: email, role: 'Super Admin' };
       users.push(bootstrapUser);
-      lsSet('eduGenius_users_v1', JSON.stringify(users));
+      localStorage.setItem('eduGenius_users_v1', JSON.stringify(users));
       window.eduUsers = users;
       sessionStorage.setItem('eduUser', JSON.stringify({ username: bootstrapUser.username, role: bootstrapUser.role }));
       currentUser = { username: bootstrapUser.username, role: bootstrapUser.role };
@@ -3573,15 +3476,9 @@ async function loginFromLanding(){
       return;
     }
 
-    // 3. Verify password against local hash
-    const passwordOk = await verifyPassword(candidate, p);
-    if(!passwordOk){
-      await window._fbSignOut();
-      showToast('Invalid email or password','error');
-      return;
-    }
-    // Silently upgrade legacy hash to PBKDF2
-    await _upgradeHashIfNeeded(candidate, p, users);
+    // 3. Firebase already verified the password in step 1 — no local re-check needed.
+    // Silently upgrade legacy local hash to PBKDF2 in the background (non-blocking).
+    _upgradeHashIfNeeded(candidate, p, users).catch(() => {});
 
     const match = { username: candidate.username, role: candidate.role };
     sessionStorage.setItem('eduUser', JSON.stringify(match));
@@ -3613,7 +3510,7 @@ async function signupFromLanding(){
     showToast('Passwords do not match','error'); return;
   }
 
-  const existingUsers = JSON.parse((await lsGet('eduGenius_users_v1')) || '[]');
+  const existingUsers = JSON.parse(localStorage.getItem('eduGenius_users_v1') || '[]');
   if(existingUsers.find(x => x.username.trim().toLowerCase() === adminUser.toLowerCase())){
     showToast('That username is already taken','error'); return;
   }
@@ -3621,7 +3518,9 @@ async function signupFromLanding(){
   _setAuthBtn('lpSignupBtn', true, 'Create School Account');
   try {
     // 1. Wait for Firebase SDK then create account
-    await _waitForFirebase();
+    try { await _waitForFirebase(); } catch(e) {
+      showToast('Cannot reach server — check your connection and try again.', 'error'); return;
+    }
     let fbUser;
     try {
       const cred = await window._fbCreateUser(adminEmail, adminPass);
@@ -3651,7 +3550,7 @@ async function signupFromLanding(){
     if(typeof _saveUsers === 'function'){
       _saveUsers(newUsers);
     } else {
-      lsSet('eduGenius_users_v1', JSON.stringify(newUsers));
+      localStorage.setItem('eduGenius_users_v1', JSON.stringify(newUsers));
       window.eduUsers = newUsers;
     }
     if(typeof addAudit === 'function') addAudit('School created, admin user added: ' + adminUser);
@@ -3692,11 +3591,10 @@ function _setHint(id, msg, type) {
   el.className = 'lp-field-hint' + (type ? ' ' + type : '');
 }
 
-async function _doCheckSignupField(field) {
-  const users = JSON.parse((await lsGet('eduGenius_users_v1')) || '[]');
-  const cfgRaw = await lsGet('eduGenius_Config_v21');
+function _doCheckSignupField(field) {
+  const users = JSON.parse(localStorage.getItem('eduGenius_users_v1') || '[]');
   const allSchools = Object.values(
-    JSON.parse(cfgRaw || '{}').schools || {}
+    JSON.parse(localStorage.getItem('eduGenius_Config_v21') || '{}').schools || {}
   ).map(s => s.trim().toLowerCase());
 
   if (field === 'school') {
@@ -3754,7 +3652,9 @@ async function googleSignIn() {
     if (b) { b.disabled = true; b.style.opacity = '0.6'; }
   });
   try {
-    await _waitForFirebase();
+    try { await _waitForFirebase(); } catch(e) {
+      showToast('Cannot reach server — check your connection and try again.', 'error'); return;
+    }
     let result;
     try {
       result = await window._fbGoogleSignIn();
@@ -3773,7 +3673,7 @@ async function googleSignIn() {
     const displayName = fbUser.displayName || email.split('@')[0];
 
     // Check if user already exists locally
-    const users = JSON.parse((await lsGet('eduGenius_users_v1')) || '[]');
+    const users = JSON.parse(localStorage.getItem('eduGenius_users_v1') || '[]');
     let candidate = users.find(x => (x.email || '').toLowerCase() === email.toLowerCase());
 
     if (candidate) {
@@ -3814,7 +3714,7 @@ async function googleSignIn() {
       if (typeof _saveUsers === 'function') {
         _saveUsers(users);
       } else {
-        lsSet('eduGenius_users_v1', JSON.stringify(users));
+        localStorage.setItem('eduGenius_users_v1', JSON.stringify(users));
         window.eduUsers = users;
       }
       if (typeof addAudit === 'function') addAudit('School created via Google: ' + displayName);
@@ -3845,8 +3745,8 @@ async function googleSignIn() {
 }
 
 // ==================== INITIALIZATION ====================
-async function init() {
-  await loadData();
+function init() {
+  loadData();
   showLandingPage();
 }
 
@@ -3931,12 +3831,11 @@ async function _upgradeHashIfNeeded(user, plainPassword, users){
   user.kdf = rec.kdf;
   delete user.password; // remove plaintext if present
   if(typeof _saveUsers === 'function') _saveUsers(users);
-  else lsSet('eduGenius_users_v1', JSON.stringify(users));
+  else localStorage.setItem('eduGenius_users_v1', JSON.stringify(users));
 }
 
-async function loadUsers(){
- const existing = await lsGet(USER_KEY);
- if(!existing){
+function loadUsers(){
+ if(!localStorage.getItem(USER_KEY)){
    // Default demo accounts — passwords: admin123 / head123 / teacher123 / bursar123.
    // Stored as legacy SHA-256 records (no kdf tag); they will be silently upgraded
    // to PBKDF2 on first successful login via _upgradeHashIfNeeded().
@@ -3946,11 +3845,11 @@ async function loadUsers(){
     {username:'teacher',passwordHash:'a37a43048cceb581d1e2f6d3665471f5e801d5fecee30e97b16b100064e6875e',salt:'eg-default-seed-v1',role:'Teacher'},
     {username:'bursar',passwordHash:'cba1ece51e073ec51081890ed6c5d9936ac638f50b28437a4e661809a2ce0bb5',salt:'eg-default-seed-v1',role:'Bursar'}
    ];
-   lsSet(USER_KEY,JSON.stringify(defaults));
+   localStorage.setItem(USER_KEY,JSON.stringify(defaults));
  }
  // One-time cleanup: remove duplicate usernames (case-insensitive, trimmed),
  // keeping the first occurrence of each.
- let stored=JSON.parse(existing||'[]');
+ let stored=JSON.parse(localStorage.getItem(USER_KEY)||'[]');
  let seen=new Set();
  let deduped=stored.filter(u=>{
    let key=(u.username||'').trim().toLowerCase();
@@ -3959,7 +3858,7 @@ async function loadUsers(){
    return true;
  });
  if(deduped.length!==stored.length){
-   lsSet(USER_KEY,JSON.stringify(deduped));
+   localStorage.setItem(USER_KEY,JSON.stringify(deduped));
  }
  // Keep window.eduUsers in sync with localStorage on boot
  if(window.eduUsers !== undefined){
@@ -3980,8 +3879,8 @@ function canAccess(section){
  return (rules[role]||[]).includes(section);
 }
 
-document.addEventListener('DOMContentLoaded', async () => {
- await loadUsers();
+document.addEventListener('DOMContentLoaded',()=>{
+ loadUsers();
 });
 </script>
 
@@ -4009,19 +3908,11 @@ document.addEventListener('DOMContentLoaded', async () => {
 </div>
 <script>
 // --- Users: load from localStorage, kept live by Firebase listener ---
-// Load async on startup; window.eduUsers populated before any login can occur
-// because DOMContentLoaded fires before any user interaction.
-window.eduUsers = [];
-(async () => {
-  try {
-    const raw = await lsGet('eduGenius_users_v1');
-    window.eduUsers = raw ? JSON.parse(raw) : [];
-  } catch(e) { window.eduUsers = []; }
-})();
+window.eduUsers = JSON.parse(localStorage.getItem('eduGenius_users_v1') || '[]');
 
 // Persist users to localStorage AND Firebase (under the school's own node)
 function _saveUsers(users) {
-  lsSet('eduGenius_users_v1', JSON.stringify(users));
+  localStorage.setItem('eduGenius_users_v1', JSON.stringify(users));
   window.eduUsers = users;
   if (window._fbDb && window._fbSet && window._fbRef && window._fbAuth && window._fbAuth.currentUser) {
     const usersObj = {};
@@ -4040,14 +3931,13 @@ function _saveUsers(users) {
 function _attachUsersListener() {
   if (!window._fbDb || !window._fbOnValue || !window._fbRef) return;
   if (!window._fbAuth || !window._fbAuth.currentUser) return;
-  window._fbOnValue(window._fbRef(window._fbDb, _fbSchoolPath() + '/users'), async snapshot => {
+  window._fbOnValue(window._fbRef(window._fbDb, _fbSchoolPath() + '/users'), snapshot => {
     const remote = snapshot.val();
     if (!remote || !remote._count) return;
     const localTs = JSON.parse(localStorage.getItem('_eduUsersTs') || '0');
     if (remote._lastModified && remote._lastModified > localTs) {
       // Remote only has username/role/email — merge with local (which has hashes)
-      const localRaw = await lsGet('eduGenius_users_v1');
-      const local = localRaw ? JSON.parse(localRaw) : [];
+      const local = JSON.parse(localStorage.getItem('eduGenius_users_v1') || '[]');
       const rebuilt = [];
       for (let i = 0; i < remote._count; i++) {
         const r = remote['u' + i];
@@ -4055,7 +3945,7 @@ function _attachUsersListener() {
         const localMatch = local.find(l => l.username === r.username && l.role === r.role);
         rebuilt.push(localMatch || r);
       }
-      lsSet('eduGenius_users_v1', JSON.stringify(rebuilt));
+      localStorage.setItem('eduGenius_users_v1', JSON.stringify(rebuilt));
       localStorage.setItem('_eduUsersTs', String(remote._lastModified));
       window.eduUsers = rebuilt;
       if (typeof renderUsersEdu === 'function') renderUsersEdu();
@@ -4089,16 +3979,13 @@ async function logoutEdu(){
 
 <!-- Phase 2 User Management & Audit Logs -->
 <script>
-// V15: audit log init — async because lsGet is async
-(async () => {
-  const existing = await lsGet('edu_audit_logs');
-  if (!existing) lsSet('edu_audit_logs', '[]');
-})();
-async function addAudit(action){
- const raw = await lsGet('edu_audit_logs');
- let logs = raw ? JSON.parse(raw) : [];
+if(!localStorage.getItem('edu_audit_logs')){
+ localStorage.setItem('edu_audit_logs','[]');
+}
+function addAudit(action){
+ let logs=JSON.parse(localStorage.getItem('edu_audit_logs')||'[]');
  logs.unshift({action:action,time:new Date().toLocaleString()});
- lsSet('edu_audit_logs',JSON.stringify(logs));
+ localStorage.setItem('edu_audit_logs',JSON.stringify(logs));
 }
 document.addEventListener('DOMContentLoaded',()=>{
  let admin=document.getElementById('sec-admin');
@@ -4128,7 +4015,7 @@ document.addEventListener('DOMContentLoaded',()=>{
 });
 
 async function addUserEdu(){
- let users=JSON.parse((await lsGet('eduGenius_users_v1'))||'[]');
+ let users=JSON.parse(localStorage.getItem('eduGenius_users_v1')||'[]');
  const newUsername = document.getElementById('newUser').value.trim();
  const newEmail    = document.getElementById('newEmail').value.trim();
  const newPassword = document.getElementById('newPass').value;
@@ -4147,8 +4034,8 @@ async function addUserEdu(){
  document.getElementById('newPass').value='';
 }
 
-async function renderUsersEdu(){
- let users=JSON.parse((await lsGet('eduGenius_users_v1'))||'[]');
+function renderUsersEdu(){
+ let users=JSON.parse(localStorage.getItem('eduGenius_users_v1')||'[]');
  let el=document.getElementById('userListEdu');
  if(!el) return;
  el.innerHTML=users.map((u,i)=>
@@ -4156,8 +4043,8 @@ async function renderUsersEdu(){
  ).join('');
 }
 
-async function delUserEdu(i){
- let users=JSON.parse((await lsGet('eduGenius_users_v1'))||'[]');
+function delUserEdu(i){
+ let users=JSON.parse(localStorage.getItem('eduGenius_users_v1')||'[]');
  const removed = users[i] ? users[i].username : '?';
  users.splice(i,1);
  _saveUsers(users);
@@ -4165,9 +4052,8 @@ async function delUserEdu(i){
  renderUsersEdu();
 }
 
-async function renderAuditEdu(){
- const raw=await lsGet('edu_audit_logs');
- let logs=raw?JSON.parse(raw):[];
+function renderAuditEdu(){
+ let logs=JSON.parse(localStorage.getItem('edu_audit_logs')||'[]');
  let el=document.getElementById('auditListEdu');
  if(!el) return;
  el.innerHTML=logs.slice(0,50).map(l=>'<div>'+escHtml(l.time)+' - '+escHtml(l.action)+'</div>').join('');
