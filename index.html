@@ -472,10 +472,10 @@ tr:hover td { background:rgba(108,52,131,0.04); }
       <input id="lpSchoolName" placeholder="e.g. Lusaka Academy" oninput="checkSignupField('school')">
       <div id="lpSchoolHint" class="lp-field-hint"></div>
       <label>Email</label>
-      <input id="lpAdminEmail" type="email" placeholder="admin@yourschool.com" oninput="checkSignupField('email')">
+      <input id="lpAdminEmail" type="email" placeholder="admin@yourschool.com" oninput="checkSignupField('email')" onchange="checkSignupField('email')">
       <div id="lpEmailHint" class="lp-field-hint"></div>
       <label>Admin Username</label>
-      <input id="lpAdminUser" placeholder="Choose a username" oninput="checkSignupField('username')">
+      <input id="lpAdminUser" placeholder="Choose a username" oninput="checkSignupField('username')" onblur="checkSignupField('username')">
       <div id="lpUserHint" class="lp-field-hint"></div>
       <label>Admin Password</label>
       <input id="lpAdminPass" type="password" placeholder="Choose a password (min 6 chars)">
@@ -483,6 +483,7 @@ tr:hover td { background:rgba(108,52,131,0.04); }
       <input id="lpAdminPassConfirm" type="password" placeholder="Re-enter password" oninput="checkSignupField('confirm')">
       <div id="lpConfirmHint" class="lp-field-hint"></div>
       <button id="lpSignupBtn" class="lp-btn lp-btn-gold lp-btn-block" style="margin-top:16px" onclick="signupFromLanding()">Create School Account</button>
+      <div id="lpSignupProgress" style="display:none;font-size:12px;color:var(--text-light);margin-top:8px;text-align:center"></div>
       <div id="lpSignupError" style="display:none;background:#FADBD8;color:#922B21;border:1px solid #F1948A;border-radius:8px;padding:10px 14px;font-size:13px;margin-top:10px;line-height:1.5"></div>
       <div class="lp-auth-divider">or</div>
       <button id="lpGoogleSignupBtn" class="lp-btn-google" onclick="googleSignIn()">
@@ -3574,8 +3575,13 @@ async function signupFromLanding(){
   }
 
   _setAuthBtn('lpSignupBtn', true, 'Create School Account');
+  const _progress = msg => {
+    const el = document.getElementById('lpSignupProgress');
+    if (el) { el.textContent = msg; el.style.display = 'block'; }
+  };
   try {
     // 1. Wait for Firebase SDK (with 10s timeout)
+    _progress('⏳ Connecting to server…');
     try {
       await Promise.race([
         _waitForFirebase(),
@@ -3586,6 +3592,7 @@ async function signupFromLanding(){
       return;
     }
 
+    _progress('⏳ Creating your account…');
     let fbUser;
     try {
       const cred = await window._fbCreateUser(adminEmail, adminPass);
@@ -3614,6 +3621,7 @@ async function signupFromLanding(){
     saveConfig();
 
     // 3. Seed Super Admin user record with PBKDF2 hash
+    _progress('⏳ Securing your credentials…');
     const { passwordHash, salt, kdf } = await makePasswordRecord(adminPass);
     const newUsers = existingUsers.concat([{ username: adminUser, passwordHash, salt, kdf, role: 'Super Admin', email: adminEmail }]);
     if(typeof _saveUsers === 'function'){
@@ -3627,6 +3635,8 @@ async function signupFromLanding(){
     sessionStorage.setItem('eduUser', JSON.stringify({ username: adminUser, role: 'Super Admin' }));
     currentUser = { username: adminUser, role: 'Super Admin' };
 
+    const progressEl = document.getElementById('lpSignupProgress');
+    if (progressEl) progressEl.style.display = 'none';
     closeLandingAuth('signup');
     hideLandingPage();
     showApp();
@@ -3641,6 +3651,8 @@ async function signupFromLanding(){
     }, 1200);
   } finally {
     _setAuthBtn('lpSignupBtn', false, 'Create School Account');
+    const progressEl = document.getElementById('lpSignupProgress');
+    if (progressEl && progressEl.style.display !== 'none') progressEl.style.display = 'none';
   }
 }
 
@@ -3650,7 +3662,9 @@ const _signupCheckTimers = {};
 
 function checkSignupField(field) {
   clearTimeout(_signupCheckTimers[field]);
-  _signupCheckTimers[field] = setTimeout(() => _doCheckSignupField(field), 350);
+  // For username length check, fire instantly so stale "too short" hint clears immediately
+  const delay = (field === 'username' && (document.getElementById('lpAdminUser')?.value||'').trim().length >= 3) ? 0 : 350;
+  _signupCheckTimers[field] = setTimeout(() => _doCheckSignupField(field), delay);
 }
 
 function _setHint(id, msg, type) {
