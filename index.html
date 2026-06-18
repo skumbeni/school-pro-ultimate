@@ -1726,11 +1726,41 @@ function showLockScreen() {
   setTimeout(() => document.getElementById('lockPinInput').focus(), 100);
 }
 
+let _lockCountdownTimer = null;
+
+function _startLockCountdown() {
+  if (_lockCountdownTimer) clearInterval(_lockCountdownTimer);
+  const errEl = document.getElementById('lockError');
+  const pinEl = document.getElementById('lockPinInput');
+  const unlockBtn = document.querySelector('#lockScreen .btn-primary');
+
+  function tick() {
+    const remaining = _lockUntil - Date.now();
+    if (remaining <= 0) {
+      clearInterval(_lockCountdownTimer);
+      _lockCountdownTimer = null;
+      errEl.textContent = '';
+      if (pinEl) { pinEl.disabled = false; pinEl.value = ''; pinEl.focus(); }
+      if (unlockBtn) unlockBtn.disabled = false;
+      return;
+    }
+    const secs = Math.ceil(remaining / 1000);
+    const mins = Math.floor(secs / 60);
+    const s = secs % 60;
+    const display = mins > 0 ? `${mins}m ${s}s` : `${secs}s`;
+    errEl.textContent = `Too many attempts. Try again in ${display}`;
+    if (pinEl) pinEl.disabled = true;
+    if (unlockBtn) unlockBtn.disabled = true;
+  }
+
+  tick();
+  _lockCountdownTimer = setInterval(tick, 1000);
+}
+
 function attemptUnlock() {
   const now = Date.now();
   if (_lockUntil > now) {
-    const secs = Math.ceil((_lockUntil - now) / 1000);
-    document.getElementById('lockError').textContent = `Too many attempts. Try again in ${secs}s.`;
+    _startLockCountdown();
     return;
   }
   const pin = document.getElementById('lockPinInput').value.trim();
@@ -1742,6 +1772,7 @@ function attemptUnlock() {
     if (a || h || m) {
       _lockAttempts = 0;
       _lockUntil = 0;
+      if (_lockCountdownTimer) { clearInterval(_lockCountdownTimer); _lockCountdownTimer = null; }
       document.getElementById('lockScreen').style.display = 'none';
       showApp();
     } else {
@@ -1751,8 +1782,7 @@ function attemptUnlock() {
         // Exponential back-off: 30s, 60s, 120s … capped at 10 min
         const delay = Math.min(30000 * Math.pow(2, _lockAttempts - 5), 600000);
         _lockUntil = Date.now() + delay;
-        const secs = Math.round(delay / 1000);
-        document.getElementById('lockError').textContent = `Too many attempts. Locked for ${secs}s.`;
+        _startLockCountdown();
       } else {
         const left = 5 - _lockAttempts;
         document.getElementById('lockError').textContent = `Incorrect PIN (${left} attempt${left===1?'':'s'} left).`;
@@ -1791,6 +1821,7 @@ function _stopIdleWatcher() {
 
 // ==================== SETUP WIZARD ====================
 function showSetupWizard() {
+  hideLandingPage();
   document.getElementById('setupWizard').style.display = 'flex';
 }
 
@@ -3413,15 +3444,12 @@ function switchLandingAuth(mode){
 // If it's already ready, resolves immediately.
 function _waitForFirebase() {
   if (window._fbReady) return Promise.resolve();
-  if (!window._fbReadyPromise) {
-    window._fbReadyPromise = new Promise((resolve, reject) => {
-      const timer = setTimeout(() => reject(new Error('Firebase SDK timeout')), 10000);
-      const done = () => { clearTimeout(timer); resolve(); };
-      window._fbReadyResolve = done;
-      window.addEventListener('firebaseReady', done, { once: true });
-    });
-  }
-  return window._fbReadyPromise;
+  return new Promise(resolve => {
+    // Store resolver so the module script can call it
+    window._fbReadyResolve = resolve;
+    // Also listen for the event in case it fires after this runs
+    window.addEventListener('firebaseReady', resolve, { once: true });
+  });
 }
 
 function _setAuthBtn(id, loading, label) {
@@ -3439,10 +3467,7 @@ async function loginFromLanding(){
 
   _setAuthBtn('lpLoginBtn', true, 'Log In');
   try {
-    // 1. Wait for Firebase SDK then sign in
-    try { await _waitForFirebase(); } catch(e) {
-      showToast('Cannot reach server — check your connection.', 'error'); return;
-    }
+    await _waitForFirebase();
     try {
       await window._fbSignIn(email, p);
     } catch(err) {
@@ -3453,42 +3478,17 @@ async function loginFromLanding(){
       return;
     }
 
-    // 2. Look up local user record by email
-    const usersRaw = localStorage.getItem('eduGenius_users_v1');
-    const users = JSON.parse(usersRaw || '[]');
-    const candidate = users.find(x => (x.email || '').toLowerCase() === email.toLowerCase());
-
-    if(!candidate){
-      // No local record — Firebase accepted the credentials so we trust them.
-      // Bootstrap a minimal record so the user can get in, then load their data.
-      const bootstrapUser = { username: email.split('@')[0], email: email, role: 'Super Admin' };
-      users.push(bootstrapUser);
-      localStorage.setItem('eduGenius_users_v1', JSON.stringify(users));
-      window.eduUsers = users;
-      sessionStorage.setItem('eduUser', JSON.stringify({ username: bootstrapUser.username, role: bootstrapUser.role }));
-      currentUser = { username: bootstrapUser.username, role: bootstrapUser.role };
-      closeLandingAuth('login');
-      hideLandingPage();
-      // If school is already set up (returning user on new device), go straight to app
-      if(config.isSetup){ showApp(); if(typeof applyRoleAccess === 'function') applyRoleAccess(bootstrapUser.role); }
-      else showSetupWizard();
-      return;
-    }
-
-    // 3. Firebase already verified the password in step 1 — no local re-check needed.
-    // Silently upgrade legacy local hash to PBKDF2 in the background (non-blocking).
-    _upgradeHashIfNeeded(candidate, p, users).catch(() => {});
-
-    const match = { username: candidate.username, role: candidate.role };
-    sessionStorage.setItem('eduUser', JSON.stringify(match));
-    currentUser = { username: match.username, role: match.role };
+    // Firebase accepted — that's all we need
+    const fbUser = window._fbAuth.currentUser;
+    const username = fbUser.displayName || email.split('@')[0];
+    currentUser = { username, role: 'Super Admin' };
+    sessionStorage.setItem('eduUser', JSON.stringify(currentUser));
 
     closeLandingAuth('login');
     hideLandingPage();
-
     if(!config.isSetup){ showSetupWizard(); return; }
     showApp();
-    if(typeof applyRoleAccess === 'function') applyRoleAccess(match.role);
+    if(typeof applyRoleAccess === 'function') applyRoleAccess(currentUser.role);
   } finally {
     _setAuthBtn('lpLoginBtn', false, 'Log In');
   }
@@ -3517,9 +3517,7 @@ async function signupFromLanding(){
   _setAuthBtn('lpSignupBtn', true, 'Create School Account');
   try {
     // 1. Wait for Firebase SDK then create account
-    try { await _waitForFirebase(); } catch(e) {
-      showToast('Cannot reach server — check your connection.', 'error'); return;
-    }
+    await _waitForFirebase();
     let fbUser;
     try {
       const cred = await window._fbCreateUser(adminEmail, adminPass);
@@ -3560,13 +3558,13 @@ async function signupFromLanding(){
     closeLandingAuth('signup');
     hideLandingPage();
     showApp();
-    showToast('Welcome to School Pro! Please set your PINs under Admin → Settings.');
+    showToast('Welcome to School Pro! Set your PINs under Admin → Settings.');
 
+    // Non-blocking PIN reminder — navigates to admin after a short delay without a confirm dialog
     setTimeout(() => {
       if(config._pinsNotSet){
-        if(confirm('Your App, Head Teacher, and Master PINs are currently set to 0000.\n\nGo to Admin → Settings now to change them?')){
-          showSection('admin');
-        }
+        showToast('⚠️ Your PINs are still 0000 — go to Admin Settings to change them.', 'error');
+        setTimeout(() => { showSection('admin'); }, 1800);
       }
     }, 1200);
   } finally {
@@ -3651,9 +3649,7 @@ async function googleSignIn() {
     if (b) { b.disabled = true; b.style.opacity = '0.6'; }
   });
   try {
-    try { await _waitForFirebase(); } catch(e) {
-      showToast('Cannot reach server — check your connection.', 'error'); return;
-    }
+    await _waitForFirebase();
     let result;
     try {
       result = await window._fbGoogleSignIn();
@@ -3729,9 +3725,8 @@ async function googleSignIn() {
 
       setTimeout(() => {
         if (config._pinsNotSet) {
-          if (confirm('Your PINs are set to 0000.\n\nGo to Admin → Settings now to change them?')) {
-            showSection('admin');
-          }
+          showToast('⚠️ Your PINs are still 0000 — go to Admin Settings to change them.', 'error');
+          setTimeout(() => { showSection('admin'); }, 1800);
         }
       }, 1200);
     }
@@ -3963,8 +3958,13 @@ async function loginEdu(){
  let ok=users.find(x=>x.username.trim().toLowerCase()===u.toLowerCase()&&x.role===r);
  if(ok && await verifyPassword(ok, p)){
    await _upgradeHashIfNeeded(ok, p, users);
-   sessionStorage.setItem('eduUser',JSON.stringify({username:ok.username,role:ok.role}));
+   currentUser = { username: ok.username, role: ok.role };
+   sessionStorage.setItem('eduUser',JSON.stringify(currentUser));
    document.getElementById('authLogin').style.display='none';
+   hideLandingPage();
+   if(!config.isSetup){ showSetupWizard(); return; }
+   showApp();
+   if(typeof applyRoleAccess === 'function') applyRoleAccess(currentUser.role);
  } else alert('Invalid username, password, or role.');
 }
 async function logoutEdu(){
