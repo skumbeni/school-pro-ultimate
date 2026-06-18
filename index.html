@@ -1171,6 +1171,19 @@ function attachFirebaseListeners() {
     try { localStorage.setItem(ALERTS_KEY, JSON.stringify(alerts)); } catch(e) {}
   });
 
+  // --- Subscription listener (operator pushes from admin panel) ---
+  window._fbOnValue(window._fbRef(window._fbDb, basePath + '/subscription'), snapshot => {
+    const remote = snapshot.val();
+    if (!remote || !remote.tier) return;
+    const local = getSubscription();
+    // Accept remote if newer or no local record
+    if (!local || !local._ts || (remote._ts && remote._ts > local._ts)) {
+      try { localStorage.setItem('edu_subscription', JSON.stringify(remote)); } catch(e) {}
+      renderSubscriptionStatus();
+      checkSubscription();
+    }
+  });
+
   _fbUpdateSyncBadge('live');
 }
 
@@ -3859,6 +3872,8 @@ function getSubscription() {
 
 function saveSubscription(data) {
   localStorage.setItem('edu_subscription', JSON.stringify(data));
+  // Mirror to Firebase so operator activations from mdm-admin push through
+  _fbWrite(_fbSchoolPath() + '/subscription', data);
 }
 
 function checkSubscription() {
@@ -3900,40 +3915,51 @@ function isWithinStudentLimit() {
   return count < tier.students;
 }
 
-function activateSubscription() {
-  const tier    = document.getElementById('subTier').value;
-  const cycle   = document.getElementById('billingCycle').value;
-  const isAnnual = cycle === 'Annual';
-  const price   = isAnnual ? TIERS[tier].annual : TIERS[tier].monthly;
-
-  const expiry = new Date();
-  if (isAnnual) expiry.setFullYear(expiry.getFullYear() + 1);
-  else expiry.setMonth(expiry.getMonth() + 1);
-
-  const data = { tier, cycle, price, expiry: expiry.toISOString(), activated: new Date().toISOString() };
-  saveSubscription(data);
-  renderSubscriptionStatus();
-  checkSubscription();
-  showToast(`✅ ${tier} plan activated (${cycle})`);
-}
+// Subscription activation is handled by the operator panel (schoolpro-admin.html).
+// Schools receive their subscription status via Firebase real-time sync.
 
 function renderSubscriptionStatus() {
   const el = document.getElementById('subscriptionStatus');
   if (!el) return;
   const sub = getSubscription();
   if (!sub) {
-    el.innerHTML = '<span style="color:#E67E22">No active subscription — 1 month free trial active.</span>';
+    el.innerHTML = '<span style="color:#E67E22">No active subscription — 1-month free trial active.</span>';
     return;
   }
-  const expiry = new Date(sub.expiry);
+  const expiry  = new Date(sub.expiry);
   const expired = new Date() > expiry;
-  const tier = TIERS[sub.tier] || {};
+  const tier    = TIERS[sub.tier] || {};
+  const daysLeft = Math.ceil((expiry - new Date()) / 86400000);
+
+  const historyHtml = (sub.paymentHistory && sub.paymentHistory.length > 0)
+    ? `<div style="margin-top:12px">
+        <strong style="font-size:12px;color:var(--text-light);text-transform:uppercase;letter-spacing:0.5px">Payment History</strong>
+        <div style="margin-top:6px;border:1px solid var(--border);border-radius:6px;overflow:hidden">
+          ${sub.paymentHistory.map(h => `
+            <div style="padding:7px 10px;border-bottom:1px solid var(--border);font-size:12px;display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap">
+              <span>🧾 <strong>${escHtml(h.ref)}</strong>${h.notes ? ' — ' + escHtml(h.notes) : ''}</span>
+              <span style="color:var(--text-light);white-space:nowrap">${h.tier} · K${(h.price||0).toLocaleString()} · ${new Date(h.date).toLocaleDateString()}</span>
+            </div>`).join('')}
+        </div>
+      </div>`
+    : '';
+
   el.innerHTML = `
-    <div style="padding:12px;background:var(--bg-main);border-radius:8px;margin-top:8px">
-      <div><strong>Plan:</strong> ${sub.tier} (${sub.cycle})</div>
-      <div><strong>Student Limit:</strong> ${tier.students ? tier.students.toLocaleString() : '—'}</div>
-      <div><strong>Price:</strong> K${sub.price ? sub.price.toLocaleString() : '—'}</div>
-      <div><strong>Expires:</strong> ${expiry.toLocaleDateString()} ${expired ? '<span style="color:#E74C3C">— EXPIRED</span>' : ''}</div>
+    <div style="padding:12px 14px;background:var(--bg);border:1px solid var(--border);border-radius:8px;margin-top:8px;font-size:13px">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;flex-wrap:wrap;gap:6px">
+        <strong style="font-size:15px">${escHtml(sub.tier)} — ${escHtml(sub.cycle)}</strong>
+        <span style="padding:3px 10px;border-radius:12px;font-size:12px;font-weight:600;background:${expired?'#FADBD8':'#D5F5E3'};color:${expired?'#E74C3C':'#27AE60'}">
+          ${expired ? 'EXPIRED' : daysLeft + 'd remaining'}
+        </span>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px 16px">
+        <div><span style="color:var(--text-light)">Student limit:</span> ${tier.students ? tier.students.toLocaleString() : '—'}</div>
+        <div><span style="color:var(--text-light)">Price paid:</span> K${sub.price ? sub.price.toLocaleString() : '—'}</div>
+        <div><span style="color:var(--text-light)">Expires:</span> ${expiry.toLocaleDateString()}</div>
+        <div><span style="color:var(--text-light)">Activated by:</span> ${escHtml(sub.activatedBy || '—')}</div>
+        ${sub.payRef ? `<div style="grid-column:1/-1"><span style="color:var(--text-light)">Payment ref:</span> <code style="font-size:12px">${escHtml(sub.payRef)}</code>${sub.payNotes ? ' — ' + escHtml(sub.payNotes) : ''}</div>` : ''}
+      </div>
+      ${historyHtml}
     </div>`;
 }
 
@@ -3945,64 +3971,11 @@ document.addEventListener('DOMContentLoaded', function() {
   card.className = 'card';
   card.innerHTML = `
     <div class="card-header"><span class="card-title">💳 Subscription</span></div>
-
-    <div style="overflow-x:auto;margin-bottom:16px">
-      <table style="width:100%;border-collapse:collapse;font-size:13px">
-        <thead>
-          <tr style="background:var(--primary);color:#fff">
-            <th style="padding:8px 12px;text-align:left">Tier</th>
-            <th style="padding:8px 12px;text-align:right">Monthly</th>
-            <th style="padding:8px 12px;text-align:right">Annual</th>
-            <th style="padding:8px 12px;text-align:right">Students</th>
-            <th style="padding:8px 12px;text-align:right">Saving</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr style="border-bottom:1px solid var(--border)">
-            <td style="padding:8px 12px"><strong>Starter</strong></td>
-            <td style="padding:8px 12px;text-align:right">K250/mo</td>
-            <td style="padding:8px 12px;text-align:right">K2,500/yr</td>
-            <td style="padding:8px 12px;text-align:right">Up to 100</td>
-            <td style="padding:8px 12px;text-align:right;color:#27AE60">Save K500</td>
-          </tr>
-          <tr style="border-bottom:1px solid var(--border)">
-            <td style="padding:8px 12px"><strong>Basic</strong></td>
-            <td style="padding:8px 12px;text-align:right">K300/mo</td>
-            <td style="padding:8px 12px;text-align:right">K3,000/yr</td>
-            <td style="padding:8px 12px;text-align:right">Up to 300</td>
-            <td style="padding:8px 12px;text-align:right;color:#27AE60">Save K600</td>
-          </tr>
-          <tr>
-            <td style="padding:8px 12px"><strong>Standard</strong></td>
-            <td style="padding:8px 12px;text-align:right">K400/mo</td>
-            <td style="padding:8px 12px;text-align:right">K4,000/yr</td>
-            <td style="padding:8px 12px;text-align:right">Up to 1,000</td>
-            <td style="padding:8px 12px;text-align:right;color:#27AE60">Save K800</td>
-          </tr>
-        </tbody>
-      </table>
-      <p style="font-size:12px;color:var(--text-light);margin-top:6px">All new schools receive a 1-month free trial.</p>
-    </div>
-
-    <div class="form-row">
-      <div class="form-group">
-        <label>Plan</label>
-        <select id="subTier">
-          <option>Starter</option>
-          <option>Basic</option>
-          <option>Standard</option>
-        </select>
-      </div>
-      <div class="form-group">
-        <label>Billing Cycle</label>
-        <select id="billingCycle">
-          <option>Monthly</option>
-          <option>Annual</option>
-        </select>
-      </div>
-    </div>
-    <button class="btn btn-success btn-sm" onclick="activateSubscription()">Activate Plan</button>
-    <div id="subscriptionStatus" style="margin-top:12px"></div>`;
+    <p style="font-size:13px;color:var(--text-light);margin-bottom:12px">
+      Your subscription is managed by your School Pro operator.
+      Contact <strong>Nexlite Digital Solutions</strong> to activate or renew.
+    </p>
+    <div id="subscriptionStatus"></div>`;
 
   admin.prepend(card);
   renderSubscriptionStatus();
