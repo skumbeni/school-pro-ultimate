@@ -446,6 +446,7 @@ tr:hover td { background:rgba(108,52,131,0.04); }
       <label>Password</label>
       <input id="lpLoginPass" type="password" placeholder="Password">
       <button id="lpLoginBtn" class="lp-btn lp-btn-gold lp-btn-block" style="margin-top:16px" onclick="loginFromLanding()">Log In</button>
+      <div id="lpLoginError" style="display:none;background:#FADBD8;color:#922B21;border:1px solid #F1948A;border-radius:8px;padding:10px 14px;font-size:13px;margin-top:10px;line-height:1.5"></div>
       <div class="lp-auth-divider">or</div>
       <button id="lpGoogleLoginBtn" class="lp-btn-google" onclick="googleSignIn()">
         <svg width="18" height="18" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.08 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.18 1.48-4.97 2.31-8.16 2.31-6.26 0-11.57-3.59-13.46-8.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/><path fill="none" d="M0 0h48v48H0z"/></svg>
@@ -478,6 +479,7 @@ tr:hover td { background:rgba(108,52,131,0.04); }
       <input id="lpAdminPassConfirm" type="password" placeholder="Re-enter password" oninput="checkSignupField('confirm')">
       <div id="lpConfirmHint" class="lp-field-hint"></div>
       <button id="lpSignupBtn" class="lp-btn lp-btn-gold lp-btn-block" style="margin-top:16px" onclick="signupFromLanding()">Create School Account</button>
+      <div id="lpSignupError" style="display:none;background:#FADBD8;color:#922B21;border:1px solid #F1948A;border-radius:8px;padding:10px 14px;font-size:13px;margin-top:10px;line-height:1.5"></div>
       <div class="lp-auth-divider">or</div>
       <button id="lpGoogleSignupBtn" class="lp-btn-google" onclick="googleSignIn()">
         <svg width="18" height="18" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.08 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.18 1.48-4.97 2.31-8.16 2.31-6.26 0-11.57-3.59-13.46-8.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/><path fill="none" d="M0 0h48v48H0z"/></svg>
@@ -505,16 +507,18 @@ tr:hover td { background:rgba(108,52,131,0.04); }
 <div id="setupWizard" style="display:none">
   <div class="wizard-box">
     <div style="font-size:48px;margin-bottom:8px">🎓</div>
-    <h2>Welcome to School Pro</h2>
-    <p style="color:var(--text-light);margin-bottom:20px">Let's set up your school. Fill in the details below.</p>
-    <label>School Name</label>
-    <input type="text" id="wizSchoolName" placeholder="e.g. Lusaka Academy">
-    <label>Application PIN (4-6 digits)</label>
-    <input type="password" id="wizAppPin" maxlength="6" placeholder="User PIN">
+    <h2 id="wizTitle">Welcome to School Pro</h2>
+    <p id="wizSubtitle" style="color:var(--text-light);margin-bottom:20px">Let's set up your school. Fill in the details below.</p>
+    <div id="wizSchoolNameRow">
+      <label>School Name</label>
+      <input type="text" id="wizSchoolName" placeholder="e.g. Lusaka Academy">
+    </div>
+    <label>Application PIN <span style="font-size:11px;color:var(--text-light)">(staff use this to unlock the app)</span></label>
+    <input type="password" id="wizAppPin" maxlength="6" placeholder="4–6 digits">
     <label>Head Teacher PIN</label>
-    <input type="password" id="wizHeadPin" maxlength="6" placeholder="Head Teacher PIN">
-    <label>Master PIN</label>
-    <input type="password" id="wizMasterPin" maxlength="6" placeholder="Master PIN">
+    <input type="password" id="wizHeadPin" maxlength="6" placeholder="4–6 digits">
+    <label>Master PIN <span style="font-size:11px;color:var(--text-light)">(admin override)</span></label>
+    <input type="password" id="wizMasterPin" maxlength="6" placeholder="4–6 digits">
     <div style="margin-top:20px">
       <button class="btn btn-primary" onclick="completeSetup()" style="width:100%">Complete Setup</button>
     </div>
@@ -1822,11 +1826,35 @@ function _stopIdleWatcher() {
 // ==================== SETUP WIZARD ====================
 function showSetupWizard() {
   hideLandingPage();
+
+  // Pre-fill school name if already known from signup
+  const nameRow = document.getElementById('wizSchoolNameRow');
+  const nameInput = document.getElementById('wizSchoolName');
+  if (config.schoolName) {
+    // School name already set during signup — hide the field, just need PINs
+    if (nameRow) nameRow.style.display = 'none';
+    document.getElementById('wizTitle').textContent = 'One last step, ' + config.schoolName;
+    document.getElementById('wizSubtitle').textContent = 'Set your three access PINs to secure the app.';
+  } else {
+    if (nameRow) nameRow.style.display = 'block';
+    if (nameInput) nameInput.value = '';
+    document.getElementById('wizTitle').textContent = 'Welcome to School Pro';
+    document.getElementById('wizSubtitle').textContent = 'Let\'s set up your school. Fill in the details below.';
+  }
+
+  // Clear PIN fields
+  ['wizAppPin','wizHeadPin','wizMasterPin'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value = '';
+  });
+
   document.getElementById('setupWizard').style.display = 'flex';
 }
 
 function completeSetup() {
-  const name = document.getElementById('wizSchoolName').value.trim();
+  const nameRow = document.getElementById('wizSchoolNameRow');
+  const nameHidden = nameRow && nameRow.style.display === 'none';
+  const name = nameHidden ? config.schoolName : document.getElementById('wizSchoolName').value.trim();
   const appPin = document.getElementById('wizAppPin').value.trim();
   const headPin = document.getElementById('wizHeadPin').value.trim();
   const masterPin = document.getElementById('wizMasterPin').value.trim();
@@ -1838,7 +1866,8 @@ function completeSetup() {
 
   config.isSetup = true;
   config.schoolName = name;
-  config.schools = { default: name };
+  if (!config.schools || Object.keys(config.schools).length === 0) config.schools = { default: name };
+  delete config._pinsNotSet;
   Promise.all([storePin(appPin), storePin(headPin), storePin(masterPin)]).then(([a, h, m]) => {
     config.appPin = a;
     config.headTeacherPin = h;
@@ -3460,21 +3489,31 @@ function _setAuthBtn(id, loading, label) {
 }
 
 async function loginFromLanding(){
+  const loginErrEl = document.getElementById('lpLoginError');
+  const _showLoginError = msg => { if(loginErrEl){ loginErrEl.textContent=msg; loginErrEl.style.display='block'; } showToast(msg,'error'); };
+  const _clearLoginError = () => { if(loginErrEl){ loginErrEl.textContent=''; loginErrEl.style.display='none'; } };
+  _clearLoginError();
+
   const email = document.getElementById('lpLoginEmail').value.trim();
   const p     = document.getElementById('lpLoginPass').value;
-  if(!email){ showToast('Enter your email address','error'); return; }
-  if(!p){ showToast('Enter your password','error'); return; }
+  if(!email){ _showLoginError('Enter your email address'); return; }
+  if(!p){ _showLoginError('Enter your password'); return; }
 
   _setAuthBtn('lpLoginBtn', true, 'Log In');
   try {
-    await _waitForFirebase();
+    await Promise.race([
+      _waitForFirebase(),
+      new Promise((_, reject) => setTimeout(() => reject(new Error('Connection timed out. Check your internet and try again.')), 10000))
+    ]).catch(err => { throw err; });
     try {
       await window._fbSignIn(email, p);
     } catch(err) {
       const msg = (err.code === 'auth/invalid-credential' || err.code === 'auth/wrong-password' || err.code === 'auth/user-not-found')
         ? 'Invalid email or password'
-        : (err.code === 'auth/too-many-requests' ? 'Too many attempts. Try again later.' : err.message);
-      showToast(msg, 'error');
+        : err.code === 'auth/too-many-requests' ? 'Too many attempts. Try again later.'
+        : err.code === 'auth/network-request-failed' ? 'No internet connection. Please check your network.'
+        : (err.message || 'Login failed. Please try again.');
+      _showLoginError(msg);
       return;
     }
 
@@ -3494,39 +3533,68 @@ async function loginFromLanding(){
   }
 }
 
+function _showSignupError(msg, showRetry) {
+  const el = document.getElementById('lpSignupError');
+  if (el) {
+    el.innerHTML = msg + (showRetry
+      ? ' <button onclick="signupFromLanding()" style="margin-left:8px;padding:4px 12px;background:#922B21;color:#fff;border:none;border-radius:5px;font-size:12px;cursor:pointer;font-weight:600">Retry</button>'
+      : '');
+    el.style.display = 'block';
+  }
+  showToast(msg, 'error');
+}
+function _clearSignupError() {
+  const el = document.getElementById('lpSignupError');
+  if (el) { el.innerHTML = ''; el.style.display = 'none'; }
+}
+
 async function signupFromLanding(){
+  _clearSignupError();
   const schoolName = document.getElementById('lpSchoolName').value.trim();
   const adminEmail = document.getElementById('lpAdminEmail').value.trim();
   const adminUser  = document.getElementById('lpAdminUser').value.trim();
   const adminPass  = document.getElementById('lpAdminPass').value;
   const adminPassConfirm = (document.getElementById('lpAdminPassConfirm') || {}).value || '';
 
-  if(!schoolName){ showToast('Enter your school name','error'); return; }
-  if(!adminEmail || !adminEmail.includes('@')){ showToast('Enter a valid email address','error'); return; }
-  if(!adminUser){ showToast('Choose an admin username','error'); return; }
-  if(!adminPass || adminPass.length < 6){ showToast('Password must be at least 6 characters','error'); return; }
+  if(!schoolName){ _showSignupError('Enter your school name'); return; }
+  if(!adminEmail || !adminEmail.includes('@')){ _showSignupError('Enter a valid email address'); return; }
+  if(!adminUser){ _showSignupError('Choose an admin username'); return; }
+  if(!adminPass || adminPass.length < 6){ _showSignupError('Password must be at least 6 characters'); return; }
   if(document.getElementById('lpAdminPassConfirm') && adminPass !== adminPassConfirm){
-    showToast('Passwords do not match','error'); return;
+    _showSignupError('Passwords do not match'); return;
   }
 
   const existingUsers = JSON.parse(localStorage.getItem('eduGenius_users_v1') || '[]');
   if(existingUsers.find(x => x.username.trim().toLowerCase() === adminUser.toLowerCase())){
-    showToast('That username is already taken','error'); return;
+    _showSignupError('That username is already taken'); return;
   }
 
   _setAuthBtn('lpSignupBtn', true, 'Create School Account');
   try {
-    // 1. Wait for Firebase SDK then create account
-    await _waitForFirebase();
+    // 1. Wait for Firebase SDK (with 10s timeout)
+    try {
+      await Promise.race([
+        _waitForFirebase(),
+        new Promise((_, reject) => setTimeout(() => reject({ code: 'app/timeout' }), 10000))
+      ]);
+    } catch(err) {
+      _showSignupError('Connection timed out. Check your internet and try again.', true);
+      return;
+    }
+
     let fbUser;
     try {
       const cred = await window._fbCreateUser(adminEmail, adminPass);
       fbUser = cred.user;
     } catch(err) {
+      const retryable = err.code === 'auth/network-request-failed' || err.code === 'auth/too-many-requests';
       const msg = err.code === 'auth/email-already-in-use'
-        ? 'That email is already registered to a school'
-        : (err.code === 'auth/weak-password' ? 'Password too weak (min 6 chars)' : err.message);
-      showToast(msg, 'error');
+        ? 'That email is already registered — try logging in instead'
+        : err.code === 'auth/weak-password' ? 'Password too weak (min 6 chars)'
+        : err.code === 'auth/network-request-failed' ? 'No internet connection. Please check your network.'
+        : err.code === 'auth/too-many-requests' ? 'Too many attempts. Please wait a moment and try again.'
+        : (err.message || 'Sign-up failed. Please try again.');
+      _showSignupError(msg, retryable);
       return;
     }
 
