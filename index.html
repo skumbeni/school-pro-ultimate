@@ -1244,21 +1244,74 @@ function _staffDirectoryPath(uid) {
   return 'staffDirectory/' + uid;
 }
 
-async function _resolveStaffSchool(uid) {
-  _fbResolvedAdminUid = null;
+// ── LOGIN SPEED FIX (MDM-style local-first resolution) ─────────────────────
+// Previously this lookup ran TWICE on every login — once explicitly awaited
+// in loginFromLanding(), and again inside the onAuthStateChanged listener
+// that fires for the same sign-in — gating the UI on two sequential/parallel
+// Firebase reads. Now: (1) concurrent calls for the same uid share one
+// in-flight request instead of firing duplicate reads, and (2) once a uid has
+// been resolved before, the cached role/school is applied INSTANTLY on
+// future logins (no network wait), with a background refresh keeping it
+// current — the same local-first, cloud-as-enrichment pattern MDM uses for
+// its password check and license check.
+const _STAFF_CACHE_KEY = 'eduStaffDirCache';
+let _staffResolveInFlight = {}; // uid -> shared Promise, dedupes concurrent lookups
+
+function _loadStaffCache(uid) {
+  try {
+    const all = JSON.parse(localStorage.getItem(_STAFF_CACHE_KEY) || '{}');
+    return Object.prototype.hasOwnProperty.call(all, uid) ? all[uid] : undefined;
+  } catch { return undefined; }
+}
+function _saveStaffCache(uid, entryOrNull) {
+  try {
+    const all = JSON.parse(localStorage.getItem(_STAFF_CACHE_KEY) || '{}');
+    all[uid] = entryOrNull; // entryOrNull is the directory entry, or null if this uid is an admin
+    localStorage.setItem(_STAFF_CACHE_KEY, JSON.stringify(all));
+  } catch {}
+}
+
+// Does the actual Firebase read. Only touches live state (_fbResolvedAdminUid,
+// config.currentSchool) once it has the authoritative answer, so a background
+// refresh can never stomp a value that was just applied from cache.
+async function _resolveStaffSchoolNetwork(uid) {
   if (!window._fbDb || !window._fbGet || !window._fbRef) return null;
+  let result = null;
   try {
     const snap = await window._fbGet(window._fbRef(window._fbDb, _staffDirectoryPath(uid)));
     const entry = snap.exists() ? snap.val() : null;
-    if (entry && entry.adminUid) {
-      _fbResolvedAdminUid = entry.adminUid;
-      if (entry.schoolId) config.currentSchool = entry.schoolId;
-      return entry;
-    }
+    if (entry && entry.adminUid) result = entry;
   } catch(e) { /* directory miss = this user is an admin, not a staff member */ }
-  // No directory entry: treat this user as the admin of their own data
-  _fbResolvedAdminUid = uid;
-  return null;
+  _fbResolvedAdminUid = result ? result.adminUid : uid;
+  if (result && result.schoolId) config.currentSchool = result.schoolId;
+  _saveStaffCache(uid, result);
+  return result;
+}
+
+// Ensures only ONE network lookup is ever in flight per uid at a time,
+// regardless of how many callers ask for it concurrently.
+function _ensureStaffNetworkRefresh(uid) {
+  if (!_staffResolveInFlight[uid]) {
+    _staffResolveInFlight[uid] = _resolveStaffSchoolNetwork(uid).finally(() => { delete _staffResolveInFlight[uid]; });
+  }
+  return _staffResolveInFlight[uid];
+}
+
+async function _resolveStaffSchool(uid) {
+  const cached = _loadStaffCache(uid);
+  if (cached !== undefined) {
+    // Local-first: apply the cached role/school instantly — the UI doesn't
+    // wait on a network read to unlock, same as MDM's local password check.
+    _fbResolvedAdminUid = (cached && cached.adminUid) ? cached.adminUid : uid;
+    if (cached && cached.schoolId) config.currentSchool = cached.schoolId;
+    _ensureStaffNetworkRefresh(uid).catch(() => {}); // silent background refresh
+    return cached;
+  }
+  // First login for this uid on this device — no cache yet, so this must
+  // wait on the network. Concurrent callers (loginFromLanding +
+  // onAuthStateChanged) share this same in-flight request instead of each
+  // firing their own duplicate read.
+  return _ensureStaffNetworkRefresh(uid);
 }
 
 function _fbDetachListeners() {
