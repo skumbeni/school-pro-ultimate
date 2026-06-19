@@ -835,6 +835,13 @@ tr:hover td { background:rgba(108,52,131,0.04); }
           <div id="teachersList"></div>
         </div>
 
+        <!-- Staff Cloud Logins -->
+        <div class="card">
+          <div class="card-header"><span class="card-title">🔐 Staff Logins (own device access)</span><button class="btn btn-primary btn-sm" onclick="promptAddStaffLogin()">+ Give Staff Login</button></div>
+          <p style="font-size:12px;color:var(--text-light);margin:0 0 10px">Create a separate email/password login so a teacher, head teacher, or bursar can sign in on their own phone and see only this school's data, role-restricted to their section.</p>
+          <div id="staffLoginsList"></div>
+        </div>
+
         <!-- Data Management -->
         <div class="card">
           <div class="card-header"><span class="card-title">💾 Data Management</span></div>
@@ -945,6 +952,20 @@ tr:hover td { background:rgba(108,52,131,0.04); }
   const db  = getDatabase(app);
   const auth = getAuth(app);
 
+  // ---- Secondary app instance: lets the admin create a teacher's Firebase
+  // Auth account WITHOUT the new account replacing the admin's own session.
+  // (createUserWithEmailAndPassword on the primary `auth` instance signs the
+  // new user in immediately, which would kick the admin out — using a second
+  // isolated Firebase App avoids that entirely.)
+  const secondaryApp = initializeApp(firebaseConfig, 'staffCreation');
+  const secondaryAuth = getAuth(secondaryApp);
+  window._fbCreateUserSecondary = async (email, pass) => {
+    const cred = await createUserWithEmailAndPassword(secondaryAuth, email, pass);
+    const uid = cred.user.uid;
+    await signOut(secondaryAuth); // clear the secondary session immediately, admin's primary session is untouched
+    return uid;
+  };
+
   // ---- Expose to global scope for non-module scripts ----
   window._fbDb   = db;
   window._fbAuth = auth;
@@ -983,6 +1004,13 @@ const CONFIG_KEY = 'eduGenius_Config_v21';
 const DB_KEY = 'eduGenius_DB_v21';
 const UNDO_KEY = 'eduGenius_Undo_v21';
 const ALERTS_KEY = 'eduGenius_Alerts_v21';
+
+// Per-school local storage isolation: each school's students/alerts are stored
+// under their own suffixed key so multiple schools never overwrite each other
+// on the same device. Cloud paths are isolated the same way via _fbSchoolPath().
+function _schoolStorageKey(base, schoolId) {
+  return base + '__' + schoolId;
+}
 const OLD_CONFIG_KEY = 'eduGenius_Config_v20';
 const OLD_DB_KEY = 'eduGenius_DB_v20';
 const OLD_UNDO_KEY = 'eduGenius_Undo_v20';
@@ -1126,11 +1154,50 @@ function _attachConnectionListener() {
 }
 
 // ==================== FIREBASE PATH HELPERS ====================
+// Path shape: schools/{adminUid}/{schoolId}/...
+// One Firebase Auth login (the admin) can own several independent schools.
+// Each school's data is fully isolated in the cloud under its own schoolId,
+// so switching schools loads genuinely separate students/teachers/config —
+// not just a relabeled view of the same data.
+//
+// Teachers log in with their OWN Firebase account, which is a different UID
+// from the school's admin. _fbResolvedAdminUid is set after login via a
+// lookup in the global staffDirectory/{uid} node (see _resolveStaffSchool).
+// If the signed-in user IS the admin (no directory entry, or entry points to
+// self), _fbResolvedAdminUid simply equals their own uid.
+let _fbResolvedAdminUid = null;
+
 function _fbSchoolPath() {
   const uid = (window._fbAuth && window._fbAuth.currentUser) ? window._fbAuth.currentUser.uid : null;
-  if (uid) return 'schools/' + uid;
+  const adminUid = _fbResolvedAdminUid || uid;
   const schoolId = (config && config.currentSchool) ? config.currentSchool : 'default';
+  if (adminUid) return 'schools/' + adminUid + '/' + schoolId;
   return 'schools/' + schoolId;
+}
+
+// Global (not school-scoped) directory: staffDirectory/{teacherUid} -> { adminUid, schoolId, role }
+// Written by the admin when they create a teacher account; read by the teacher's
+// device right after their own Firebase Auth login succeeds, so the app knows
+// which school's cloud path to load before any school-scoped listener attaches.
+function _staffDirectoryPath(uid) {
+  return 'staffDirectory/' + uid;
+}
+
+async function _resolveStaffSchool(uid) {
+  _fbResolvedAdminUid = null;
+  if (!window._fbDb || !window._fbGet || !window._fbRef) return null;
+  try {
+    const snap = await window._fbGet(window._fbRef(window._fbDb, _staffDirectoryPath(uid)));
+    const entry = snap.exists() ? snap.val() : null;
+    if (entry && entry.adminUid) {
+      _fbResolvedAdminUid = entry.adminUid;
+      if (entry.schoolId) config.currentSchool = entry.schoolId;
+      return entry;
+    }
+  } catch(e) { /* directory miss = this user is an admin, not a staff member */ }
+  // No directory entry: treat this user as the admin of their own data
+  _fbResolvedAdminUid = uid;
+  return null;
 }
 
 function _fbDetachListeners() {
@@ -1175,7 +1242,7 @@ function saveStudents(changedIdx) {
   // When provided, only that student's node is patched — much leaner than
   // a full array rewrite. Metadata (_count, _lastModified) is always updated.
   try {
-    localStorage.setItem(DB_KEY, JSON.stringify(students));
+    localStorage.setItem(_schoolStorageKey(DB_KEY, config.currentSchool || 'default'), JSON.stringify(students));
     if (!_fbSyncEnabled || !window._fbDb) return;
 
     const basePath = _fbSchoolPath() + '/students';
@@ -1213,7 +1280,7 @@ function saveUndoData() {
 
 function saveAlerts() {
   try {
-    localStorage.setItem(ALERTS_KEY, JSON.stringify(alerts));
+    localStorage.setItem(_schoolStorageKey(ALERTS_KEY, config.currentSchool || 'default'), JSON.stringify(alerts));
     _fbWrite(_fbSchoolPath() + '/alerts', { list: alerts, _lastModified: Date.now() });
   } catch(e) {}
 }
@@ -1258,7 +1325,7 @@ function attachFirebaseListeners() {
         }
       }
       students = rebuilt;
-      try { localStorage.setItem(DB_KEY, JSON.stringify(students)); } catch(e) {}
+      try { localStorage.setItem(_schoolStorageKey(DB_KEY, config.currentSchool || 'default'), JSON.stringify(students)); } catch(e) {}
       refreshCurrentSection();
     }
   });
@@ -1268,7 +1335,7 @@ function attachFirebaseListeners() {
     const remote = snapshot.val();
     if (!remote || !remote.list) return;
     alerts = remote.list;
-    try { localStorage.setItem(ALERTS_KEY, JSON.stringify(alerts)); } catch(e) {}
+    try { localStorage.setItem(_schoolStorageKey(ALERTS_KEY, config.currentSchool || 'default'), JSON.stringify(alerts)); } catch(e) {}
   });
 
   // --- Subscription listener (operator pushes from admin panel) ---
@@ -1296,17 +1363,29 @@ window.addEventListener('firebaseReady', () => {
   // Start real-time connection listener immediately (works before auth)
   _attachConnectionListener();
 
-  window._fbOnAuthStateChanged(user => {
+  window._fbOnAuthStateChanged(async user => {
     if (user) {
       if (config) config._fbUid = user.uid;
+      // Resolve whether this user is the school admin or a staff member
+      // logging in on their own device — must happen BEFORE listeners attach,
+      // since _fbSchoolPath() depends on the resolved adminUid.
+      const staffEntry = await _resolveStaffSchool(user.uid);
+      if (staffEntry && staffEntry.role) {
+        currentUser = { username: user.email || user.uid, role: staffEntry.role };
+        sessionStorage.setItem('eduUser', JSON.stringify(currentUser));
+      }
       _fbDetachListeners();
       attachFirebaseListeners();
       if (typeof _attachUsersListener === 'function') _attachUsersListener();
-      // Seed / refresh Firebase with local config on first connect
-      const safeCfg = Object.assign({}, config);
-      delete safeCfg.appPin; delete safeCfg.headTeacherPin; delete safeCfg.masterPin;
-      safeCfg._lastModified = Date.now();
-      _fbWrite(_fbSchoolPath() + '/config', safeCfg);
+      // Seed / refresh Firebase with local config on first connect.
+      // Staff members (non-admins) never overwrite the school's config —
+      // only the admin's own device should push config writes.
+      if (!staffEntry) {
+        const safeCfg = Object.assign({}, config);
+        delete safeCfg.appPin; delete safeCfg.headTeacherPin; delete safeCfg.masterPin;
+        safeCfg._lastModified = Date.now();
+        _fbWrite(_fbSchoolPath() + '/config', safeCfg);
+      }
       // Flush anything queued while signed out
       _flushRetryQueue();
       // V8: Runtime open-rules detector — try reading another school's data.
@@ -1456,8 +1535,10 @@ function loadData() {
     }
   } catch(e) { config = getDefaultConfig(); }
 
+  const sid = (config && config.currentSchool) ? config.currentSchool : 'default';
   try {
-    const dbRaw = localStorage.getItem(DB_KEY);
+    const scopedRaw = localStorage.getItem(_schoolStorageKey(DB_KEY, sid));
+    const dbRaw = scopedRaw !== null ? scopedRaw : localStorage.getItem(DB_KEY); // fallback for pre-existing single-school data
     students = dbRaw ? JSON.parse(dbRaw).map(s => migrateStudent(s)) : [];
   } catch(e) { students = []; }
 
@@ -1473,7 +1554,8 @@ function loadData() {
   } catch(e) { undoStack = []; redoStack = []; }
 
   try {
-    const altRaw = localStorage.getItem(ALERTS_KEY);
+    const scopedRaw = localStorage.getItem(_schoolStorageKey(ALERTS_KEY, sid));
+    const altRaw = scopedRaw !== null ? scopedRaw : localStorage.getItem(ALERTS_KEY); // fallback
     alerts = altRaw ? JSON.parse(altRaw) : [];
   } catch(e) { alerts = []; }
 }
@@ -2924,6 +3006,7 @@ function renderAdmin() {
   renderGradesManager();
   renderFeeStructure();
   renderTeachers();
+  renderStaffLogins();
   renderSchools();
 }
 
@@ -3245,30 +3328,201 @@ function removeClassFeeOverride(cls) {
 }
 
 // ==================== TEACHERS ====================
+const TEACHER_DESIGNATIONS = [
+  'Class Teacher',
+  'Grade Teacher',
+  'Subject Teacher',
+  'Senior Teacher',
+  'Deputy Head Teacher',
+  'Head of Department',
+  'Bursar',
+  'Accountant',
+  'Counsellor',
+  'Other'
+];
+
 function renderTeachers() {
   let html = '';
   (config.teachers || []).forEach((t, ti) => {
-    html += `<div style="display:flex;gap:8px;align-items:center;margin:4px 0;flex-wrap:wrap">
-      <input type="text" value="${esc(t.name)}" onchange="config.teachers[${ti}].name=this.value;saveConfig()" placeholder="Name" style="width:150px">
-      <select onchange="config.teachers[${ti}].class=this.value;saveConfig()" style="width:150px">
+    const desigOptions = TEACHER_DESIGNATIONS.map(d =>
+      `<option value="${esc(d)}" ${(t.designation||'Class Teacher')===d?'selected':''}>${escHtml(d)}</option>`
+    ).join('');
+    html += `<div style="display:flex;gap:8px;align-items:center;margin:6px 0;flex-wrap:wrap;background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:8px 10px">
+      <input type="text" value="${esc(t.name)}" onchange="config.teachers[${ti}].name=this.value;saveConfig()" placeholder="Full Name" style="width:140px">
+      <select onchange="config.teachers[${ti}].designation=this.value;saveConfig()" style="width:155px" title="Role / Designation">
+        ${desigOptions}
+      </select>
+      <select onchange="config.teachers[${ti}].class=this.value;saveConfig()" style="width:130px" title="Assigned Class">
         <option value="">No class</option>
         ${getAllClasses().map(c => `<option value="${esc(c)}" ${t.class===c?'selected':''}>${escHtml(c)}</option>`).join('')}
       </select>
-      <input type="password" value="${esc(t.pin)}" onchange="config.teachers[${ti}].pin=this.value;saveConfig()" placeholder="PIN" style="width:80px" maxlength="6">
-      <button class="btn btn-danger btn-sm" onclick="config.teachers.splice(${ti},1);saveConfig();renderTeachers()">✕</button>
+      <input type="password" value="${esc(t.pin)}" onchange="config.teachers[${ti}].pin=this.value;saveConfig()" placeholder="PIN" style="width:75px" maxlength="6" title="Staff PIN">
+      <button class="btn btn-danger btn-sm" onclick="config.teachers.splice(${ti},1);saveConfig();renderTeachers()" title="Remove">✕</button>
     </div>`;
   });
-  document.getElementById('teachersList').innerHTML = html || '<div style="color:var(--text-light)">No teachers added</div>';
+  document.getElementById('teachersList').innerHTML = html || '<div style="color:var(--text-light)">No teachers added yet.</div>';
 }
 
 function addTeacher() {
   if (!config.teachers) config.teachers = [];
-  config.teachers.push({ name: '', class: '', pin: '' });
+  config.teachers.push({ name: '', designation: 'Class Teacher', class: '', pin: '' });
   saveConfig();
   renderTeachers();
 }
 
+function renderStaffLogins() {
+  const el = document.getElementById('staffLoginsList');
+  if (!el) return;
+  const users = JSON.parse(localStorage.getItem(USER_KEY) || '[]').filter(u => u.firebaseUid);
+  if (!users.length) {
+    el.innerHTML = '<div style="color:var(--text-light)">No staff have cloud logins yet</div>';
+    return;
+  }
+  el.innerHTML = users.map(u => `
+    <div style="display:flex;gap:8px;align-items:center;margin:4px 0;flex-wrap:wrap">
+      <span style="min-width:120px">${esc(u.username)}</span>
+      <span style="font-size:12px;color:var(--text-light);min-width:160px">${esc(u.email||'')}</span>
+      <span class="badge">${esc(u.role)}</span>
+      <button class="btn btn-danger btn-sm" onclick="revokeStaffLogin('${esc(u.firebaseUid)}')">Revoke access</button>
+    </div>`).join('');
+}
+
+// Revokes a staff member's access by deleting their staffDirectory entry —
+// their Firebase Auth login still exists but _resolveStaffSchool() will no
+// longer find a school to attach them to, so they can no longer reach any
+// school's data. (Deleting the Firebase Auth account itself requires the
+// Admin SDK / a Cloud Function — not available from the client.)
+async function revokeStaffLogin(firebaseUid) {
+  if (!confirm('Revoke this staff member\u2019s access? They will no longer be able to view this school\u2019s data.')) return;
+  try {
+    if (window._fbDb && window._fbRef && window._fbSet) {
+      await window._fbSet(window._fbRef(window._fbDb, _staffDirectoryPath(firebaseUid)), null);
+    }
+    const users = JSON.parse(localStorage.getItem(USER_KEY) || '[]').filter(u => u.firebaseUid !== firebaseUid);
+    if (typeof _saveUsers === 'function') _saveUsers(users);
+    else { localStorage.setItem(USER_KEY, JSON.stringify(users)); window.eduUsers = users; }
+    showToast('Access revoked');
+    renderStaffLogins();
+  } catch(e) {
+    showToast('Could not revoke access — check your connection', 'error');
+  }
+}
+
+// ==================== STAFF CLOUD LOGINS ====================
+// Lets the admin issue a teacher/head-teacher/bursar their own Firebase
+// email+password login that works on their own device. Two writes happen:
+//   1. staffDirectory/{teacherUid} — global lookup so the teacher's device
+//      knows which admin/school to load data from (see _resolveStaffSchool)
+//   2. schools/{adminUid}/{schoolId}/users/{n} — the per-school staff list
+//      (role + display name), used for in-app role-based UI gating
+async function createStaffLogin(name, email, password, role) {
+  if (!name || !email || !email.includes('@')) { showToast('Enter a name and valid email', 'error'); return false; }
+  if (!password || password.length < 6) { showToast('Password must be at least 6 characters', 'error'); return false; }
+  const VALID_ROLES = ['Teacher','Senior Teacher','Grade Teacher','Subject Teacher','Head of Department','Deputy Head Teacher','Head Teacher','Bursar','Accountant','Counsellor','Parent'];
+  if (!VALID_ROLES.includes(role)) { showToast('Invalid role. Choose from: ' + VALID_ROLES.join(', '), 'error'); return false; }
+  if (!window._fbAuth || !window._fbAuth.currentUser) { showToast('You must be signed in as the school admin to add staff', 'error'); return false; }
+
+  const adminUid = window._fbAuth.currentUser.uid;
+  const schoolId = config.currentSchool || 'default';
+
+  // Firebase only allows creating a user while signed in as that same context
+  // in the client SDK — createUserWithEmailAndPassword will sign the new user
+  // in immediately, swapping out the admin's session. We capture the admin's
+  // credentials first so we can restore the admin session right after.
+  if (!window._fbCreateUserSecondary) {
+    showToast('Staff account creation is not available — secondary auth instance missing. Contact support.', 'error');
+    return false;
+  }
+
+  try {
+    const newUid = await window._fbCreateUserSecondary(email, password);
+    if (!newUid) { showToast('Could not create the staff account', 'error'); return false; }
+
+    // Write the global directory entry so the teacher's own device can resolve their school
+    await window._fbSet(window._fbRef(window._fbDb, _staffDirectoryPath(newUid)), {
+      adminUid, schoolId, role, name, email, _createdAt: Date.now()
+    });
+
+    // Add to the school's local + cloud users list for role-gated UI
+    const existing = JSON.parse(localStorage.getItem(USER_KEY) || '[]');
+    const newUsers = existing.concat([{ username: name, email, role, firebaseUid: newUid }]);
+    if (typeof _saveUsers === 'function') _saveUsers(newUsers);
+    else { localStorage.setItem(USER_KEY, JSON.stringify(newUsers)); window.eduUsers = newUsers; }
+
+    showToast(name + ' can now log in on their own device with that email and password.');
+    renderStaffLogins();
+    return true;
+  } catch(err) {
+    const code = err.code || '';
+    const msg = code === 'auth/email-already-in-use' ? 'That email is already registered to an account'
+      : code === 'auth/weak-password' ? 'Password too weak (min 6 characters)'
+      : code === 'auth/invalid-email' ? 'Enter a valid email address'
+      : (err.message || 'Could not create staff account');
+    showToast(msg, 'error');
+    return false;
+  }
+}
+
+function promptAddStaffLogin() {
+  const CLOUD_ROLES = [
+    'Teacher','Senior Teacher','Grade Teacher','Subject Teacher',
+    'Head of Department','Deputy Head Teacher','Head Teacher',
+    'Bursar','Accountant','Counsellor','Parent'
+  ];
+  const roleOptions = CLOUD_ROLES.map(r => `<option value="${r}">${r}</option>`).join('');
+  const modal = document.createElement('div');
+  modal.className = 'modal-overlay';
+  modal.id = 'staffLoginModal';
+  modal.innerHTML = `
+    <div class="modal" style="max-width:420px">
+      <h3>🔐 Give Staff a Cloud Login</h3>
+      <p style="font-size:13px;color:var(--text-light);margin-bottom:14px">The staff member will use this email &amp; password to log in on their own device.</p>
+      <div class="form-group"><label>Full Name</label><input type="text" id="slName" placeholder="e.g. Mary Phiri"></div>
+      <div class="form-group"><label>Email Address</label><input type="email" id="slEmail" placeholder="e.g. mary@school.edu"></div>
+      <div class="form-group"><label>Role / Designation</label>
+        <select id="slRole">${roleOptions}</select>
+      </div>
+      <div class="form-group"><label>Temporary Password <span style="font-size:11px;color:var(--text-light)">(min 6 chars)</span></label>
+        <input type="password" id="slPass" placeholder="Staff changes this after first login">
+      </div>
+      <div class="modal-actions">
+        <button class="btn btn-outline" onclick="document.getElementById('staffLoginModal').remove()">Cancel</button>
+        <button class="btn btn-primary" onclick="
+          const n=document.getElementById('slName').value.trim();
+          const e=document.getElementById('slEmail').value.trim();
+          const r=document.getElementById('slRole').value;
+          const p=document.getElementById('slPass').value;
+          createStaffLogin(n,e,p,r).then(ok=>{ if(ok) document.getElementById('staffLoginModal').remove(); });
+        ">Create Login</button>
+      </div>
+    </div>`;
+  document.body.appendChild(modal);
+}
+
 // ==================== SCHOOLS ====================
+// Each school gets its own local storage slice (DB_KEY/ALERTS_KEY are suffixed
+// with the schoolId) and its own cloud path (schools/{adminUid}/{schoolId}/...).
+// Switching schools saves the current school's in-memory data to its slot,
+// then loads the target school's slot — fully separate, no data bleed.
+// (per-school local storage key helper is defined near top of file, alongside CONFIG_KEY/DB_KEY/ALERTS_KEY)
+
+function _saveCurrentSchoolLocalData() {
+  const sid = config.currentSchool || 'default';
+  try { localStorage.setItem(_schoolStorageKey(DB_KEY, sid), JSON.stringify(students)); } catch(e) {}
+  try { localStorage.setItem(_schoolStorageKey(ALERTS_KEY, sid), JSON.stringify(alerts)); } catch(e) {}
+}
+
+function _loadSchoolLocalData(schoolId) {
+  try {
+    const raw = localStorage.getItem(_schoolStorageKey(DB_KEY, schoolId));
+    students = raw ? JSON.parse(raw).map(s => migrateStudent(s)) : [];
+  } catch(e) { students = []; }
+  try {
+    const raw = localStorage.getItem(_schoolStorageKey(ALERTS_KEY, schoolId));
+    alerts = raw ? JSON.parse(raw) : [];
+  } catch(e) { alerts = []; }
+}
+
 function renderSchools() {
   let html = '';
   const schoolKeys = Object.keys(config.schools || {});
@@ -3276,36 +3530,64 @@ function renderSchools() {
     html += `<div style="display:flex;gap:8px;align-items:center;margin:4px 0">
       <input type="text" value="${esc(config.schools[key])}" onchange="config.schools['${key}']=this.value;saveConfig()" style="width:200px">
       ${key === config.currentSchool ? '<span class="badge badge-wa">Active</span>' : `<button class="btn btn-outline btn-sm" onclick="switchSchool('${key}')">Switch</button>`}
-      ${key !== 'default' ? `<button class="btn btn-danger btn-sm" onclick="deleteSchool('${key}')">✕</button>` : ''}
+      ${schoolKeys.length > 1 ? `<button class="btn btn-danger btn-sm" onclick="deleteSchool('${key}')">✕</button>` : ''}
     </div>`;
   });
   document.getElementById('schoolsList').innerHTML = html;
 }
 
 function addSchool() {
-  const name = prompt('Enter school name:');
-  if (!name) return;
-  const key = 'school_' + Date.now();
+  const name = prompt('Enter new school name:');
+  if (!name || !name.trim()) return;
+  const key = 'sch_' + Date.now().toString(36) + Math.random().toString(36).slice(2,8);
+  if (!config.schools) config.schools = {};
   config.schools[key] = name.trim();
   saveConfig();
+  showToast('"' + name.trim() + '" added. Tap Switch to set it up.');
   renderSchools();
 }
 
 function switchSchool(key) {
-  config.currentSchool = key;
-  saveConfig();
-  // Detach old listeners and reattach for the new school's Firebase path
+  if (!config.schools || !config.schools[key]) { showToast('School not found', 'error'); return; }
+  if (key === config.currentSchool) return;
+
+  // 1. Persist current school's local data before leaving it
+  _saveCurrentSchoolLocalData();
+
+  // 2. Detach cloud listeners for the old school
   _fbDetachListeners();
-  attachFirebaseListeners();
-  showToast('Switched to ' + config.schools[key]);
+
+  // 3. Switch the pointer
+  config.currentSchool = key;
+  config.schoolName = config.schools[key];
+  saveConfig();
+
+  // 4. Load the new school's local data immediately (instant UI update)
+  _loadSchoolLocalData(key);
   document.getElementById('sidebarSchoolName').textContent = config.schools[key];
+  showSection('dashboard');
+
+  // 5. Reattach cloud listeners — pulls/syncs the new school's own Firebase path
+  attachFirebaseListeners();
+
+  showToast('Switched to ' + config.schools[key]);
 }
 
 function deleteSchool(key) {
-  if (!confirm('Delete school ' + config.schools[key] + '?')) return;
+  const schoolKeys = Object.keys(config.schools || {});
+  if (schoolKeys.length <= 1) { showToast('You must keep at least one school', 'error'); return; }
+  if (!confirm('Delete school "' + config.schools[key] + '"? Its local data on this device will be removed. Cloud data is not deleted.')) return;
+
+  try { localStorage.removeItem(_schoolStorageKey(DB_KEY, key)); } catch(e) {}
+  try { localStorage.removeItem(_schoolStorageKey(ALERTS_KEY, key)); } catch(e) {}
+
   delete config.schools[key];
-  if (config.currentSchool === key) config.currentSchool = 'default';
-  saveConfig();
+  if (config.currentSchool === key) {
+    const remaining = Object.keys(config.schools)[0];
+    switchSchool(remaining);
+  } else {
+    saveConfig();
+  }
   renderSchools();
 }
 
@@ -3522,15 +3804,28 @@ async function loginFromLanding(){
       return;
     }
 
-    // Firebase accepted — that's all we need
+    // Firebase accepted — figure out if this is the school admin or a staff
+    // member logging in on their own device. Must wait for this resolution
+    // (also triggered by onAuthStateChanged) since it determines both the
+    // role and which school's cloud data to load.
     const fbUser = window._fbAuth.currentUser;
-    const username = fbUser.displayName || email.split('@')[0];
-    currentUser = { username, role: 'Super Admin' };
+    const directoryEntry = await _resolveStaffSchool(fbUser.uid);
+
+    const username = directoryEntry?.name || fbUser.displayName || email.split('@')[0];
+    const role = directoryEntry?.role || 'Super Admin'; // no directory entry = this account is the school admin
+    currentUser = { username, role };
     sessionStorage.setItem('eduUser', JSON.stringify(currentUser));
 
     closeLandingAuth('login');
     hideLandingPage();
-    if(!config.isSetup){ showSetupWizard(); return; }
+    if(!config.isSetup){
+      if (role !== 'Super Admin') {
+        _showLoginError('This school has not finished setup yet. Ask your Super Admin to complete it first.');
+        return;
+      }
+      showSetupWizard();
+      return;
+    }
     showApp();
     if(typeof applyRoleAccess === 'function') applyRoleAccess(currentUser.role);
   } finally {
@@ -3613,8 +3908,9 @@ async function signupFromLanding(){
     config.headTeacherPin = '0000';
     config.masterPin      = '0000';
     config._pinsNotSet    = true;
-    config.currentSchool  = fbUser.uid;
-    config.schools        = { [fbUser.uid]: schoolName };
+    const newSchoolId     = 'sch_' + Date.now().toString(36) + Math.random().toString(36).slice(2,8);
+    config.currentSchool  = newSchoolId;
+    config.schools        = { [newSchoolId]: schoolName };
     saveConfig();
 
     // 4. Hash password async (non-blocking)
@@ -3772,8 +4068,9 @@ async function googleSignIn() {
       config.headTeacherPin = '0000';
       config.masterPin = '0000';
       config._pinsNotSet = true;
-      config.currentSchool = fbUser.uid;
-      config.schools = { [fbUser.uid]: schoolName.trim() };
+      const newSchoolId = 'sch_' + Date.now().toString(36) + Math.random().toString(36).slice(2,8);
+      config.currentSchool = newSchoolId;
+      config.schools = { [newSchoolId]: schoolName.trim() };
       saveConfig();
 
       // Add user record (no password hash needed — Google handles auth)
@@ -3936,8 +4233,15 @@ function loadUsers(){
 function canAccess(section){
  const role=currentUser.role;
  const rules={
-   'Teacher':['dashboard','assessments','attendance','classmarks'],
-   'Bursar':['dashboard','finance','reports'],
+   'Teacher':['dashboard','database','assessments','classmarks','attendance','reports'],
+   'Grade Teacher':['dashboard','database','assessments','classmarks','attendance','conduct','reports'],
+   'Subject Teacher':['dashboard','assessments','classmarks','reports'],
+   'Senior Teacher':['dashboard','database','assessments','classmarks','attendance','conduct','announcements','reports'],
+   'Head of Department':['dashboard','database','assessments','classmarks','attendance','reports'],
+   'Deputy Head Teacher':['dashboard','database','register','assessments','classmarks','finance','attendance','conduct','analytics','announcements','reports'],
+   'Bursar':['dashboard','database','finance','reports'],
+   'Accountant':['dashboard','finance','reports'],
+   'Counsellor':['dashboard','database','conduct','attendance','reports'],
    'Parent':['dashboard','reports'],
    'Head Teacher':['dashboard','database','register','assessments','classmarks','finance','attendance','conduct','analytics','announcements','reports'],
    'Super Admin':['*']
@@ -3966,8 +4270,15 @@ document.addEventListener('DOMContentLoaded',()=>{
 <select id="loginRole">
 <option>Super Admin</option>
 <option>Head Teacher</option>
+<option>Deputy Head Teacher</option>
+<option>Senior Teacher</option>
+<option>Head of Department</option>
 <option>Teacher</option>
+<option>Grade Teacher</option>
+<option>Subject Teacher</option>
 <option>Bursar</option>
+<option>Accountant</option>
+<option>Counsellor</option>
 <option>Parent</option>
 </select>
 <button onclick="loginEdu()" style="width:100%">Login</button>
@@ -4071,8 +4382,15 @@ document.addEventListener('DOMContentLoaded',()=>{
    <input id="newPass" placeholder="Password">
    <select id="newRole">
      <option>Teacher</option>
-     <option>Bursar</option>
+     <option>Grade Teacher</option>
+     <option>Subject Teacher</option>
+     <option>Senior Teacher</option>
+     <option>Head of Department</option>
+     <option>Deputy Head Teacher</option>
      <option>Head Teacher</option>
+     <option>Bursar</option>
+     <option>Accountant</option>
+     <option>Counsellor</option>
      <option>Parent</option>
    </select>
    <button onclick="addUserEdu()">Add User</button>
@@ -4148,8 +4466,15 @@ function applyRoleAccess(role){
    'Administrator':['dashboard','database','register','assessments','classmarks','finance','attendance','conduct','analytics','announcements','reports','admin'],
    'Super Admin':['dashboard','database','register','assessments','classmarks','finance','attendance','conduct','analytics','announcements','reports','admin'],
    'Head Teacher':['dashboard','database','assessments','classmarks','attendance','conduct','reports','admin'],
+   'Deputy Head Teacher':['dashboard','database','register','assessments','classmarks','finance','attendance','conduct','analytics','announcements','reports'],
+   'Senior Teacher':['dashboard','database','assessments','classmarks','attendance','conduct','announcements','reports'],
+   'Head of Department':['dashboard','database','assessments','classmarks','attendance','reports'],
    'Teacher':['dashboard','database','assessments','classmarks','attendance','reports'],
+   'Grade Teacher':['dashboard','database','assessments','classmarks','attendance','conduct','reports'],
+   'Subject Teacher':['dashboard','assessments','classmarks','reports'],
    'Bursar':['dashboard','database','finance','reports'],
+   'Accountant':['dashboard','finance','reports'],
+   'Counsellor':['dashboard','database','conduct','attendance','reports'],
    'Parent':['dashboard','reports']
  };
  let allowed=rules[role]||['dashboard'];
