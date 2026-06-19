@@ -1278,10 +1278,29 @@ async function _resolveStaffSchoolNetwork(uid) {
   if (!window._fbDb || !window._fbGet || !window._fbRef) return null;
   let result = null;
   try {
-    const snap = await window._fbGet(window._fbRef(window._fbDb, _staffDirectoryPath(uid)));
+    // LOGIN HANG FIX: a bare Firebase read has no built-in timeout. If the
+    // staffDirectory/{uid} path is slow, offline, or blocked by security
+    // rules that haven't propagated yet, the await below could hang
+    // indefinitely — which froze loginFromLanding() on a first-time login
+    // with no cache to fall back on (the "stuck on landing page, nothing
+    // happens" bug). Racing it against a timeout guarantees this always
+    // settles, so the login button/error UI can recover either way.
+    const snap = await Promise.race([
+      window._fbGet(window._fbRef(window._fbDb, _staffDirectoryPath(uid))),
+      new Promise((_, reject) => setTimeout(() => reject(new Error('staff-directory-timeout')), 8000))
+    ]);
     const entry = snap.exists() ? snap.val() : null;
     if (entry && entry.adminUid) result = entry;
-  } catch(e) { /* directory miss = this user is an admin, not a staff member */ }
+  } catch(e) {
+    // directory miss, permission-denied, or timeout = treat as "not a staff
+    // member" for THIS attempt. On timeout we deliberately do NOT cache the
+    // null result (see below), so the next login retries the network instead
+    // of permanently assuming this uid is an admin.
+    if (e && e.message === 'staff-directory-timeout') {
+      _fbResolvedAdminUid = uid;
+      return null;
+    }
+  }
   _fbResolvedAdminUid = result ? result.adminUid : uid;
   if (result && result.schoolId) config.currentSchool = result.schoolId;
   _saveStaffCache(uid, result);
@@ -3959,6 +3978,9 @@ async function loginFromLanding(){
     // member logging in on their own device. Must wait for this resolution
     // (also triggered by onAuthStateChanged) since it determines both the
     // role and which school's cloud data to load.
+    // _resolveStaffSchool now always settles within ~8s even if the network
+    // read hangs (see _resolveStaffSchoolNetwork), so this can't freeze the
+    // button forever the way it used to.
     const fbUser = window._fbAuth.currentUser;
     const directoryEntry = await _resolveStaffSchool(fbUser.uid);
 
@@ -3979,6 +4001,13 @@ async function loginFromLanding(){
     }
     showApp();
     if(typeof applyRoleAccess === 'function') applyRoleAccess(currentUser.role);
+  } catch(err) {
+    // Catches anything unexpected after sign-in succeeded (e.g. a non-timeout
+    // error bubbling out of _resolveStaffSchool, or the 10s connection-wait
+    // timeout itself). Previously errors here had no handler, so the screen
+    // looked frozen with the button stuck on "Please wait…" until `finally`
+    // quietly reset it with no explanation.
+    _showLoginError(err && err.message ? err.message : 'Something went wrong logging in. Please try again.');
   } finally {
     _setAuthBtn('lpLoginBtn', false, 'Log In');
   }
