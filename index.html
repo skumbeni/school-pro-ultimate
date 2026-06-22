@@ -4908,6 +4908,7 @@ document.addEventListener('DOMContentLoaded', function() {
               <th style="background:var(--primary);color:#fff;padding:8px 12px;text-align:left;font-weight:600">Annual</th>
               <th style="background:var(--primary);color:#fff;padding:8px 12px;text-align:left;font-weight:600">Annual saving</th>
               <th style="background:var(--primary);color:#fff;padding:8px 12px;text-align:left;font-weight:600">Students</th>
+              <th style="background:var(--primary);color:#fff;padding:8px 12px;text-align:left;font-weight:600">Activate</th>
             </tr>
           </thead>
           <tbody>
@@ -4917,6 +4918,7 @@ document.addEventListener('DOMContentLoaded', function() {
               <td style="padding:8px 12px;border-bottom:1px solid var(--border)">K1,990</td>
               <td style="padding:8px 12px;border-bottom:1px solid var(--border);color:var(--success)">Save K398</td>
               <td style="padding:8px 12px;border-bottom:1px solid var(--border)">Up to 150</td>
+              <td style="padding:8px 12px;border-bottom:1px solid var(--border)"><button type="button" class="btn btn-success btn-sm" onclick="openActivationModal('Starter')">📲 WhatsApp</button></td>
             </tr>
             <tr>
               <td style="padding:8px 12px;border-bottom:1px solid var(--border);font-weight:600">Basic</td>
@@ -4924,6 +4926,7 @@ document.addEventListener('DOMContentLoaded', function() {
               <td style="padding:8px 12px;border-bottom:1px solid var(--border)">K2,990</td>
               <td style="padding:8px 12px;border-bottom:1px solid var(--border);color:var(--success)">Save K598</td>
               <td style="padding:8px 12px;border-bottom:1px solid var(--border)">Up to 400</td>
+              <td style="padding:8px 12px;border-bottom:1px solid var(--border)"><button type="button" class="btn btn-success btn-sm" onclick="openActivationModal('Basic')">📲 WhatsApp</button></td>
             </tr>
             <tr style="background:rgba(108,52,131,0.06)">
               <td style="padding:8px 12px;border-bottom:1px solid var(--border);font-weight:700;color:var(--primary)">Standard ⭐</td>
@@ -4931,6 +4934,7 @@ document.addEventListener('DOMContentLoaded', function() {
               <td style="padding:8px 12px;border-bottom:1px solid var(--border)">K4,290</td>
               <td style="padding:8px 12px;border-bottom:1px solid var(--border);color:var(--success)">Save K1,098</td>
               <td style="padding:8px 12px;border-bottom:1px solid var(--border)">Up to 1,200</td>
+              <td style="padding:8px 12px;border-bottom:1px solid var(--border)"><button type="button" class="btn btn-success btn-sm" onclick="openActivationModal('Standard')">📲 WhatsApp</button></td>
             </tr>
             <tr>
               <td style="padding:8px 12px;font-weight:600">Premium</td>
@@ -4938,16 +4942,85 @@ document.addEventListener('DOMContentLoaded', function() {
               <td style="padding:8px 12px">K5,490</td>
               <td style="padding:8px 12px;color:var(--success)">Save K1,698</td>
               <td style="padding:8px 12px">Unlimited</td>
+              <td style="padding:8px 12px"><button type="button" class="btn btn-success btn-sm" onclick="openActivationModal('Premium')">📲 WhatsApp</button></td>
             </tr>
           </tbody>
         </table>
       </div>
-      <p style="font-size:12px;color:var(--text-light);margin-top:8px">All plans include a 1-month free trial. Contact Nexlite Digital Solutions to upgrade.</p>
+      <p style="font-size:12px;color:var(--text-light);margin-top:8px">All plans include a 1-month free trial. Pay via Airtel Money or MTN Mobile Money to <strong style="color:var(--text)">+260 977 638 790</strong>, then tap WhatsApp next to your plan.</p>
     </div>`;
 
   admin.prepend(card);
   renderSubscriptionStatus();
 });
+
+// ---- WhatsApp activation/renewal helper ----
+const ACTIVATION_PLANS = ['Starter', 'Basic', 'Standard', 'Premium'];
+
+function openActivationModal(planName) {
+  const schoolId = (config && config.currentSchool) ? config.currentSchool : 'default';
+  const schoolName = (config && config.schools && config.schools[schoolId]) ? config.schools[schoolId] : (config.schoolName || '');
+  const planOptions = ACTIVATION_PLANS.map(p => `<option value="${p}" ${p === planName ? 'selected' : ''}>${p}</option>`).join('');
+
+  const modal = document.createElement('div');
+  modal.className = 'modal-overlay';
+  modal.id = 'activationModal';
+  modal.innerHTML = `
+    <div class="modal" style="max-width:420px">
+      <h3>📲 Activate / Renew via WhatsApp</h3>
+      <p style="font-size:13px;color:var(--text-light);margin-bottom:14px">
+        Pay via <strong>Airtel Money</strong> or <strong>MTN Mobile Money</strong> to <strong style="color:var(--text)">+260 977 638 790</strong>,
+        then fill in the details below. We'll open WhatsApp with everything Nexlite needs to activate your subscription.
+      </p>
+      <div class="form-group"><label>School ID</label><input type="text" value="${escHtml(schoolId)}" disabled></div>
+      ${schoolName ? `<div class="form-group"><label>School Name</label><input type="text" value="${escHtml(schoolName)}" disabled></div>` : ''}
+      <div class="form-group"><label>Plan <span style="color:var(--accent)">*</span></label>
+        <select id="actPlan">${planOptions}</select>
+      </div>
+      <div class="form-group"><label>Billing Cycle <span style="color:var(--accent)">*</span></label>
+        <select id="actCycle"><option value="Monthly">Monthly</option><option value="Annual">Annual</option></select>
+      </div>
+      <div class="form-group"><label>Transaction ID <span style="color:var(--accent)">*</span></label>
+        <input type="text" id="actTxn" placeholder="e.g. MP240615.1023.A12345" autocomplete="off">
+      </div>
+      <div id="actErr" style="display:none;color:var(--accent);font-size:12.5px;margin-bottom:8px"></div>
+      <div class="modal-actions">
+        <button class="btn btn-outline" onclick="document.getElementById('activationModal').remove()">Cancel</button>
+        <button class="btn btn-success" onclick="submitActivationRequest('${escHtml(schoolId)}','${escHtml(schoolName)}')">Send via WhatsApp</button>
+      </div>
+    </div>`;
+  document.body.appendChild(modal);
+  setTimeout(() => { const el = document.getElementById('actTxn'); if (el) el.focus(); }, 50);
+}
+
+function submitActivationRequest(schoolId, schoolName) {
+  const plan = document.getElementById('actPlan').value;
+  const cycle = document.getElementById('actCycle').value;
+  const txn = document.getElementById('actTxn').value.trim();
+  const errEl = document.getElementById('actErr');
+
+  if (!plan || !cycle || !txn) {
+    errEl.textContent = 'Please select a plan and billing cycle, and enter your Transaction ID before sending.';
+    errEl.style.display = 'block';
+    return;
+  }
+
+  const lines = [
+    'Hello Nexlite, I would like to activate/renew my School Pro subscription.',
+    'School ID: ' + schoolId,
+    schoolName ? ('School Name: ' + schoolName) : null,
+    'Plan: ' + plan,
+    'Billing: ' + cycle,
+    'Transaction ID: ' + txn
+  ].filter(Boolean);
+  const message = lines.join('\n');
+  const url = 'https://wa.me/260977638790?text=' + encodeURIComponent(message);
+  window.open(url, '_blank');
+
+  const modal = document.getElementById('activationModal');
+  if (modal) modal.remove();
+  if (typeof showToast === 'function') showToast('Opening WhatsApp…');
+}
 </script>
 
 </body>
